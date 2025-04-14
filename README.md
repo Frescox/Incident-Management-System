@@ -50,7 +50,7 @@ Si necesitas cambiar credenciales, edita `config.py`:
 Ejecuta el script de prueba:
 
 ```bash
-python test_db.py
+python test/test_db.py
 ```
 
 Si todo va bien, deberías ver:
