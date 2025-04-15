@@ -1,14 +1,29 @@
 from flask import Flask
-from config import Config
-from app.models import db  # Importa db desde models
+from app.db.database import db
+from app.services.mail_service import init_mail
+from app.routers.routes import init_routes
+from config import config
 
-def create_app():
+def create_app(config_name='default'):
+    """
+    Crea y configura una instancia de la aplicación Flask
+    
+    Args:
+        config_name (str): Nombre de la configuración a utilizar
+        
+    Returns:
+        La aplicación Flask configurada
+    """
     app = Flask(__name__)
-    app.config.from_object(Config)
     
-    db.init_app(app)
+    # Cargar configuración
+    app.config.from_object(config[config_name])
     
+    # Inicializar servicios
+    init_mail(app)
+    
+    # Registrar rutas
     with app.app_context():
-        db.create_all()  # Opcional: crea tablas si no existen
+        init_routes(app)
     
     return app
