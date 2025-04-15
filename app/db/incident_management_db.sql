@@ -1,221 +1,424 @@
--- Base de datos para Sistema de Gestión de Incidencias
+-- phpMyAdmin SQL Dump
+-- version 5.2.1
+-- https://www.phpmyadmin.net/
+--
+-- Servidor: 127.0.0.1
+-- Tiempo de generación: 15-04-2025 a las 06:42:51
+-- Versión del servidor: 10.4.32-MariaDB
+-- Versión de PHP: 8.2.12
 
--- Crear base de datos
-CREATE DATABASE IF NOT EXISTS sistema_incidencias DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE sistema_incidencias;
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
 
--- Tabla de roles
-CREATE TABLE roles (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(50) NOT NULL UNIQUE,
-    descripcion TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
 
--- Tabla de usuarios
-CREATE TABLE usuarios (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    apellido VARCHAR(100) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    rol_id INT NOT NULL,
-    estado BOOLEAN DEFAULT TRUE,
-    ultimo_login DATETIME,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (rol_id) REFERENCES roles(id)
-);
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
 
--- Tabla de categorías de incidencias
-CREATE TABLE categorias (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL UNIQUE,
-    descripcion TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+--
+-- Base de datos: `sistema_incidencias`
+--
 
--- Tabla de prioridades
-CREATE TABLE prioridades (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(50) NOT NULL UNIQUE,
-    descripcion TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+-- --------------------------------------------------------
 
--- Tabla de estados de incidencias
-CREATE TABLE estados (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(50) NOT NULL UNIQUE,
-    descripcion TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+--
+-- Estructura de tabla para la tabla `categorias`
+--
 
--- Tabla de asignación de categorías a agentes
-CREATE TABLE categoria_agente (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT NOT NULL,
-    categoria_id INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY unique_categoria_agente (usuario_id, categoria_id),
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
-    FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE CASCADE
-);
+CREATE TABLE `categorias` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `descripcion` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Tabla principal de incidencias
-CREATE TABLE incidencias (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    titulo VARCHAR(255) NOT NULL,
-    descripcion TEXT NOT NULL,
-    categoria_id INT NOT NULL,
-    prioridad_id INT NOT NULL,
-    estado_id INT NOT NULL,
-    usuario_creador_id INT NOT NULL,
-    agente_asignado_id INT,
-    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-    fecha_ultima_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    fecha_resolucion DATETIME,
-    fecha_cierre DATETIME,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (categoria_id) REFERENCES categorias(id),
-    FOREIGN KEY (prioridad_id) REFERENCES prioridades(id),
-    FOREIGN KEY (estado_id) REFERENCES estados(id),
-    FOREIGN KEY (usuario_creador_id) REFERENCES usuarios(id),
-    FOREIGN KEY (agente_asignado_id) REFERENCES usuarios(id)
-);
+-- --------------------------------------------------------
 
--- Tabla para adjuntos (imágenes)
-CREATE TABLE adjuntos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    incidencia_id INT NOT NULL,
-    nombre_archivo VARCHAR(255) NOT NULL,
-    ruta_archivo VARCHAR(255) NOT NULL,
-    tipo_archivo VARCHAR(100) NOT NULL,
-    tamaño_archivo INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (incidencia_id) REFERENCES incidencias(id) ON DELETE CASCADE
-);
+--
+-- Estructura de tabla para la tabla `estados`
+--
 
--- Tabla de comentarios en incidencias
-CREATE TABLE comentarios (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    incidencia_id INT NOT NULL,
-    usuario_id INT NOT NULL,
-    contenido TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (incidencia_id) REFERENCES incidencias(id) ON DELETE CASCADE,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
-);
+CREATE TABLE `estados` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(50) NOT NULL,
+  `descripcion` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Tabla de historial de cambios de estados de incidencias
-CREATE TABLE historial_estados (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    incidencia_id INT NOT NULL,
-    estado_anterior_id INT NOT NULL,
-    estado_nuevo_id INT NOT NULL,
-    usuario_id INT NOT NULL,
-    comentario TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (incidencia_id) REFERENCES incidencias(id) ON DELETE CASCADE,
-    FOREIGN KEY (estado_anterior_id) REFERENCES estados(id),
-    FOREIGN KEY (estado_nuevo_id) REFERENCES estados(id),
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
-);
+--
+-- Volcado de datos para la tabla `estados`
+--
 
--- Tabla de log de actividad
-CREATE TABLE log_actividad (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT,
-    accion VARCHAR(255) NOT NULL,
-    entidad VARCHAR(50),
-    entidad_id INT,
-    detalles TEXT,
-    ip_address VARCHAR(45),
-    user_agent TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
-);
+INSERT INTO `estados` (`id`, `nombre`, `descripcion`, `created_at`, `updated_at`) VALUES
+(1, 'nuevo', 'Incidencia recién creada', '2025-04-14 07:22:14', '2025-04-14 07:22:14'),
+(2, 'en_progreso', 'Incidencia siendo atendida', '2025-04-14 07:22:14', '2025-04-14 07:22:14'),
+(3, 'resuelto', 'Incidencia resuelta', '2025-04-14 07:22:14', '2025-04-14 07:22:14'),
+(4, 'cerrado', 'Incidencia cerrada', '2025-04-14 07:22:14', '2025-04-14 07:22:14');
 
--- Tabla de sesiones PHP
-CREATE TABLE sesiones (
-    id VARCHAR(128) PRIMARY KEY,
-    usuario_id INT,
-    ip_address VARCHAR(45) NOT NULL,
-    user_agent TEXT,
-    payload TEXT NOT NULL,
-    last_activity INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
-);
+-- --------------------------------------------------------
 
--- Tabla de configuración del sistema
-CREATE TABLE configuracion (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    clave VARCHAR(100) NOT NULL UNIQUE,
-    valor TEXT NOT NULL,
-    descripcion TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+--
+-- Estructura de tabla para la tabla `historial_estados`
+--
 
--- Tabla de notificaciones
-CREATE TABLE notificaciones (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT NOT NULL,
-    titulo VARCHAR(255) NOT NULL,
-    mensaje TEXT NOT NULL,
-    leida BOOLEAN DEFAULT FALSE,
-    enlace VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
-);
+CREATE TABLE `historial_estados` (
+  `id` int(11) NOT NULL,
+  `incidencia_id` int(11) NOT NULL,
+  `estado_anterior_id` int(11) NOT NULL,
+  `estado_nuevo_id` int(11) NOT NULL,
+  `usuario_id` int(11) NOT NULL,
+  `comentario` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Insertar datos iniciales para roles
-INSERT INTO roles (nombre, descripcion) VALUES 
-('administrador', 'Control total del sistema'),
-('agente', 'Gestión de incidencias asignadas'),
-('usuario', 'Creación y seguimiento de incidencias propias');
+-- --------------------------------------------------------
 
--- Insertar datos iniciales para estados
-INSERT INTO estados (nombre, descripcion) VALUES 
-('nuevo', 'Incidencia recién creada'),
-('en_progreso', 'Incidencia siendo atendida'),
-('resuelto', 'Incidencia resuelta'),
-('cerrado', 'Incidencia cerrada');
+--
+-- Estructura de tabla para la tabla `incidencias`
+--
 
--- Insertar datos iniciales para prioridades
-INSERT INTO prioridades (nombre, descripcion) VALUES 
-('alta', 'Atención inmediata requerida'),
-('media', 'Atención normal'),
-('baja', 'Atención cuando sea posible');
+CREATE TABLE `incidencias` (
+  `id` int(11) NOT NULL,
+  `titulo` varchar(255) NOT NULL,
+  `descripcion` text NOT NULL,
+  `categoria_id` int(11) NOT NULL,
+  `prioridad_id` int(11) NOT NULL,
+  `estado_id` int(11) NOT NULL,
+  `usuario_creador_id` int(11) NOT NULL,
+  `agente_asignado_id` int(11) DEFAULT NULL,
+  `fecha_creacion` datetime DEFAULT current_timestamp(),
+  `fecha_ultima_actualizacion` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `fecha_resolucion` datetime DEFAULT NULL,
+  `fecha_cierre` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Insertar usuario administrador inicial
-INSERT INTO usuarios (nombre, apellido, email, password, rol_id) VALUES 
-('Admin', 'Sistema', 'admin@sistema.com', 'admin123', 1);
+-- --------------------------------------------------------
 
--- Insertar configuraciones iniciales
-INSERT INTO configuracion (clave, valor, descripcion) VALUES 
-('sistema_nombre', 'Sistema de Gestión de Incidencias', 'Nombre del sistema'),
-('email_notificaciones', 'notificaciones@sistema.com', 'Email desde el cual se envían notificaciones'),
-('dias_cierre_automatico', '7', 'Días después de resolución para cerrar automáticamente');
+--
+-- Estructura de tabla para la tabla `log_actividad`
+--
 
--- Crear índices para optimizar consultas frecuentes
-CREATE INDEX idx_incidencias_estado ON incidencias(estado_id);
-CREATE INDEX idx_incidencias_categoria ON incidencias(categoria_id);
-CREATE INDEX idx_incidencias_prioridad ON incidencias(prioridad_id);
-CREATE INDEX idx_incidencias_agente ON incidencias(agente_asignado_id);
-CREATE INDEX idx_incidencias_creador ON incidencias(usuario_creador_id);
-CREATE INDEX idx_comentarios_incidencia ON comentarios(incidencia_id);
-CREATE INDEX idx_historial_incidencia ON historial_estados(incidencia_id);
-CREATE INDEX idx_log_actividad_usuario ON log_actividad(usuario_id);
-CREATE INDEX idx_log_actividad_accion ON log_actividad(accion);
+CREATE TABLE `log_actividad` (
+  `id` int(11) NOT NULL,
+  `usuario_id` int(11) DEFAULT NULL,
+  `accion` varchar(255) NOT NULL,
+  `entidad` varchar(50) DEFAULT NULL,
+  `entidad_id` int(11) DEFAULT NULL,
+  `detalles` text DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `user_agent` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `notificaciones`
+--
+
+CREATE TABLE `notificaciones` (
+  `id` int(11) NOT NULL,
+  `usuario_id` int(11) NOT NULL,
+  `titulo` varchar(255) NOT NULL,
+  `mensaje` text NOT NULL,
+  `leida` tinyint(1) DEFAULT 0,
+  `enlace` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `prioridades`
+--
+
+CREATE TABLE `prioridades` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(50) NOT NULL,
+  `descripcion` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `prioridades`
+--
+
+INSERT INTO `prioridades` (`id`, `nombre`, `descripcion`, `created_at`, `updated_at`) VALUES
+(1, 'alta', 'Atención inmediata requerida', '2025-04-14 07:22:14', '2025-04-14 07:22:14'),
+(2, 'media', 'Atención normal', '2025-04-14 07:22:14', '2025-04-14 07:22:14'),
+(3, 'baja', 'Atención cuando sea posible', '2025-04-14 07:22:14', '2025-04-14 07:22:14');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `roles`
+--
+
+CREATE TABLE `roles` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(50) NOT NULL,
+  `descripcion` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `roles`
+--
+
+INSERT INTO `roles` (`id`, `nombre`, `descripcion`, `created_at`, `updated_at`) VALUES
+(1, 'administrador', 'Control total del sistema', '2025-04-14 07:22:14', '2025-04-14 07:22:14'),
+(2, 'agente', 'Gestión de incidencias asignadas', '2025-04-14 07:22:14', '2025-04-14 07:22:14'),
+(3, 'usuario', 'Creación y seguimiento de incidencias propias', '2025-04-14 07:22:14', '2025-04-14 07:22:14');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `sesiones`
+--
+
+CREATE TABLE `sesiones` (
+  `id` varchar(128) NOT NULL,
+  `usuario_id` int(11) DEFAULT NULL,
+  `ip_address` varchar(45) NOT NULL,
+  `user_agent` text DEFAULT NULL,
+  `payload` text NOT NULL,
+  `last_activity` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `usuarios`
+--
+
+CREATE TABLE `usuarios` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `apellido` varchar(100) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `rol_id` int(11) NOT NULL,
+  `estado` tinyint(1) DEFAULT 1,
+  `telefono` varchar(20) DEFAULT NULL,
+  `metodo_verificacion` enum('email','sms') DEFAULT NULL,
+  `otp` varchar(6) DEFAULT NULL,
+  `otp_expira` int(11) DEFAULT NULL,
+  `verificado` tinyint(1) DEFAULT 0,
+  `ultimo_login` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `usuarios`
+--
+
+INSERT INTO `usuarios` (`id`, `nombre`, `apellido`, `email`, `password`, `rol_id`, `estado`, `telefono`, `metodo_verificacion`, `otp`, `otp_expira`, `verificado`, `ultimo_login`, `created_at`, `updated_at`) VALUES
+(46, '+a18JdrcDS2MXYjAPbz40+dxDu5AhQJBzJUDmzdW3cY=', 'AJ/39lHwscJOzex1UxRz0g91VPE4RjxJHpne37U2dfo=', 'm7/MDLhEofbLV6wO1HdFot72Nabobwx8+w/uTDyYoOBuHdFOzpR+1mgC/gQ3tHb8', 'Saz1ztu5GnKwRfEbSvESR6GO18TcQLjevmbY5XVPdrk=', 3, 1, NULL, 'email', NULL, NULL, 1, '2025-04-14 21:26:24', '2025-04-15 04:23:40', '2025-04-15 04:26:24'),
+(47, 'ijmsuf2kd51bAOrwhR4ui4t2ngtq/qzUGeg6JZpQKk0=', 'lXtk82u6fohnZdxJRJQ/lkusQts14doyZ/EiLSiwBPA=', '3WsTUQs2nTXDMvnRpMoJsu/sJY7FYvCXcfeTwieJiwiI/4pIga8wPW7jvm0BC8zz', 'HoCRBxKVARi+llPlHk80r48DtUkSe2rocpOqy/UFeTo=', 2, 1, NULL, 'email', NULL, NULL, 1, '2025-04-14 21:26:08', '2025-04-15 04:25:06', '2025-04-15 04:26:08');
+
+--
+-- Índices para tablas volcadas
+--
+
+--
+-- Indices de la tabla `categorias`
+--
+ALTER TABLE `categorias`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `nombre` (`nombre`);
+
+--
+-- Indices de la tabla `estados`
+--
+ALTER TABLE `estados`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `nombre` (`nombre`);
+
+--
+-- Indices de la tabla `historial_estados`
+--
+ALTER TABLE `historial_estados`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `estado_anterior_id` (`estado_anterior_id`),
+  ADD KEY `estado_nuevo_id` (`estado_nuevo_id`),
+  ADD KEY `usuario_id` (`usuario_id`),
+  ADD KEY `idx_historial_incidencia` (`incidencia_id`);
+
+--
+-- Indices de la tabla `incidencias`
+--
+ALTER TABLE `incidencias`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_incidencias_estado` (`estado_id`),
+  ADD KEY `idx_incidencias_categoria` (`categoria_id`),
+  ADD KEY `idx_incidencias_prioridad` (`prioridad_id`),
+  ADD KEY `idx_incidencias_agente` (`agente_asignado_id`),
+  ADD KEY `idx_incidencias_creador` (`usuario_creador_id`);
+
+--
+-- Indices de la tabla `log_actividad`
+--
+ALTER TABLE `log_actividad`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_log_actividad_usuario` (`usuario_id`),
+  ADD KEY `idx_log_actividad_accion` (`accion`);
+
+--
+-- Indices de la tabla `notificaciones`
+--
+ALTER TABLE `notificaciones`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `usuario_id` (`usuario_id`);
+
+--
+-- Indices de la tabla `prioridades`
+--
+ALTER TABLE `prioridades`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `nombre` (`nombre`);
+
+--
+-- Indices de la tabla `roles`
+--
+ALTER TABLE `roles`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `nombre` (`nombre`);
+
+--
+-- Indices de la tabla `sesiones`
+--
+ALTER TABLE `sesiones`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `usuario_id` (`usuario_id`);
+
+--
+-- Indices de la tabla `usuarios`
+--
+ALTER TABLE `usuarios`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `email` (`email`),
+  ADD KEY `rol_id` (`rol_id`),
+  ADD KEY `idx_usuarios_email` (`email`),
+  ADD KEY `idx_usuarios_verificado` (`verificado`);
+
+--
+-- AUTO_INCREMENT de las tablas volcadas
+--
+
+--
+-- AUTO_INCREMENT de la tabla `categorias`
+--
+ALTER TABLE `categorias`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `estados`
+--
+ALTER TABLE `estados`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT de la tabla `historial_estados`
+--
+ALTER TABLE `historial_estados`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `incidencias`
+--
+ALTER TABLE `incidencias`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `log_actividad`
+--
+ALTER TABLE `log_actividad`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `notificaciones`
+--
+ALTER TABLE `notificaciones`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `prioridades`
+--
+ALTER TABLE `prioridades`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT de la tabla `roles`
+--
+ALTER TABLE `roles`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT de la tabla `usuarios`
+--
+ALTER TABLE `usuarios`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=48;
+
+--
+-- Restricciones para tablas volcadas
+--
+
+--
+-- Filtros para la tabla `historial_estados`
+--
+ALTER TABLE `historial_estados`
+  ADD CONSTRAINT `historial_estados_ibfk_1` FOREIGN KEY (`incidencia_id`) REFERENCES `incidencias` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `historial_estados_ibfk_2` FOREIGN KEY (`estado_anterior_id`) REFERENCES `estados` (`id`),
+  ADD CONSTRAINT `historial_estados_ibfk_3` FOREIGN KEY (`estado_nuevo_id`) REFERENCES `estados` (`id`),
+  ADD CONSTRAINT `historial_estados_ibfk_4` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`);
+
+--
+-- Filtros para la tabla `incidencias`
+--
+ALTER TABLE `incidencias`
+  ADD CONSTRAINT `incidencias_ibfk_1` FOREIGN KEY (`categoria_id`) REFERENCES `categorias` (`id`),
+  ADD CONSTRAINT `incidencias_ibfk_2` FOREIGN KEY (`prioridad_id`) REFERENCES `prioridades` (`id`),
+  ADD CONSTRAINT `incidencias_ibfk_3` FOREIGN KEY (`estado_id`) REFERENCES `estados` (`id`),
+  ADD CONSTRAINT `incidencias_ibfk_4` FOREIGN KEY (`usuario_creador_id`) REFERENCES `usuarios` (`id`),
+  ADD CONSTRAINT `incidencias_ibfk_5` FOREIGN KEY (`agente_asignado_id`) REFERENCES `usuarios` (`id`);
+
+--
+-- Filtros para la tabla `log_actividad`
+--
+ALTER TABLE `log_actividad`
+  ADD CONSTRAINT `log_actividad_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `notificaciones`
+--
+ALTER TABLE `notificaciones`
+  ADD CONSTRAINT `notificaciones_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `sesiones`
+--
+ALTER TABLE `sesiones`
+  ADD CONSTRAINT `sesiones_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `usuarios`
+--
+ALTER TABLE `usuarios`
+  ADD CONSTRAINT `usuarios_ibfk_1` FOREIGN KEY (`rol_id`) REFERENCES `roles` (`id`);
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
