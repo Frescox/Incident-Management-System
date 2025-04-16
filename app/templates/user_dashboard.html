@@ -1,59 +1,273 @@
+<!-- app/templates/user_dashboard.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión de Incidencias</title>
+    <title>Dashboard de Usuario - Sistema de Incidencias</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
         body {
             background-color: #f8f9fa;
         }
-        .auth-container {
-            max-width: 450px;
-            margin: 50px auto;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
             background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
         }
-        .auth-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .nav-tabs {
+        .user-info {
+            background-color: #f1f8ff;
+            padding: 20px;
+            border-radius: 8px;
             margin-bottom: 20px;
         }
-        .form-group {
-            margin-bottom: 20px;
+        .incident-card {
+            transition: transform 0.2s;
+            margin-bottom: 15px;
         }
-        .auth-footer {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 0.9rem;
+        .incident-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
-        .logout-btn {
-            display: flex;
-            justify-content: center;
-            margin-top: 20px;
+        .badge-new {
+            background-color: #0d6efd;
+        }
+        .badge-in-progress {
+            background-color: #fd7e14;
+        }
+        .badge-resolved {
+            background-color: #198754;
+        }
+        .badge-closed {
+            background-color: #6c757d;
+        }
+        .priority-high {
+            border-left: 4px solid #dc3545;
+        }
+        .priority-medium {
+            border-left: 4px solid #ffc107;
+        }
+        .priority-low {
+            border-left: 4px solid #0dcaf0;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="auth-container">
-            <div class="auth-header">
-                <h2>Welcome to User Dashboard</h2>
-                <h1>Bienvenido, {{ nombre }} {{ apellido }}</h1>
-                <p>Tu correo: {{ correo }}</p>
+    <div class="dashboard-container">
+        <div class="user-info">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2>Bienvenido, {{ nombre }} {{ apellido }}</h2>
+                    <p class="mb-0">Correo: {{ correo }}</p>
+                </div>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">
+                    <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+                </a>
             </div>
-            <div class="logout-btn">
-                <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">Cerrar sesión</a>
-            </div>
-            <div class="auth-footer">
-                <p>&copy; 2025 Sistema de Gestión de Incidencias</p>
+        </div>
+
+        <!-- Formulario para nueva incidencia (modal) -->
+        <button type="button" class="btn btn-primary mb-4" data-bs-toggle="modal" data-bs-target="#newIncidentModal">
+            <i class="bi bi-plus-circle"></i> Nueva Incidencia
+        </button>
+
+        <!-- Modal para nueva incidencia -->
+<!-- Solo la sección del modal de nueva incidencia (el resto del archivo permanece igual) -->
+    <div class="modal fade" id="newIncidentModal" tabindex="-1" aria-labelledby="newIncidentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="newIncidentModalLabel">Nueva Incidencia</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="POST" action="{{ url_for('user.create_incident') }}">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="titulo" class="form-label">Título</label>
+                            <input type="text" class="form-control" id="titulo" name="titulo" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="descripcion" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="descripcion" name="descripcion" rows="4" required></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="categoria_id" class="form-label">Categoría</label>
+                                <select class="form-select" id="categoria_id" name="categoria_id" required>
+                                    {% for categoria in categorias %}
+                                    <option value="{{ categoria.id }}">{{ categoria.nombre }}</option>
+                                    {% else %}
+                                    <option value="" disabled>No hay categorías disponibles</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="prioridad_id" class="form-label">Prioridad</label>
+                                <select class="form-select" id="prioridad_id" name="prioridad_id" required>
+                                    {% for prioridad in prioridades %}
+                                    <option value="{{ prioridad.id }}">{{ prioridad.nombre }}</option>
+                                    {% else %}
+                                    <option value="" disabled>No hay prioridades disponibles</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Crear Incidencia</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
+
+        <!-- Lista de incidencias -->
+        <h3 class="mb-4">Mis Incidencias</h3>
+        
+        {% if not incidencias %}
+        <div class="alert alert-info">
+            No has creado ninguna incidencia todavía.
+        </div>
+        {% else %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Título</th>
+                        <th>Categoría</th>
+                        <th>Prioridad</th>
+                        <th>Estado</th>
+                        <th>Fecha Creación</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for incidencia in incidencias %}
+                    <tr class="align-middle {% if incidencia.prioridad_nombre == 'alta' %}priority-high
+                                          {% elif incidencia.prioridad_nombre == 'media' %}priority-medium
+                                          {% else %}priority-low{% endif %}">
+                        <td>{{ incidencia.id }}</td>
+                        <td>{{ incidencia.titulo }}</td>
+                        <td>{{ incidencia.categoria_nombre }}</td>
+                        <td>{{ incidencia.prioridad_nombre|capitalize }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if incidencia.estado_nombre == 'nuevo' %}badge-new
+                                {% elif incidencia.estado_nombre == 'en_progreso' %}badge-in-progress
+                                {% elif incidencia.estado_nombre == 'resuelto' %}badge-resolved
+                                {% else %}badge-closed{% endif %}">
+                                {{ incidencia.estado_nombre|replace('_', ' ')|title }}
+                            </span>
+                        </td>
+                        <td>{{ incidencia.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>
+                            <a href="{{ url_for('user.view_incident', incident_id=incidencia.id) }}" 
+                               class="btn btn-sm btn-outline-primary" title="Ver">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-secondary edit-incident-btn" 
+                                    data-id="{{ incidencia.id }}" 
+                                    data-titulo="{{ incidencia.titulo }}"
+                                    data-descripcion="{{ incidencia.descripcion }}"
+                                    data-categoria="{{ incidencia.categoria_id }}"
+                                    data-prioridad="{{ incidencia.prioridad_id }}"
+                                    title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <form method="POST" action="{{ url_for('user.delete_incident', incident_id=incidencia.id) }}" 
+                                  class="d-inline" onsubmit="return confirm('¿Estás seguro de eliminar esta incidencia?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Modal para editar incidencia -->
+    <div class="modal fade" id="editIncidentModal" tabindex="-1" aria-labelledby="editIncidentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editIncidentModalLabel">Editar Incidencia</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="POST" id="editIncidentForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="edit_titulo" class="form-label">Título</label>
+                            <input type="text" class="form-control" id="edit_titulo" name="titulo" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_descripcion" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="edit_descripcion" name="descripcion" rows="4" required></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="edit_categoria_id" class="form-label">Categoría</label>
+                                <select class="form-select" id="edit_categoria_id" name="categoria_id" required>
+                                    {% for categoria in categorias %}
+                                    <option value="{{ categoria.id }}">{{ categoria.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="edit_prioridad_id" class="form-label">Prioridad</label>
+                                <select class="form-select" id="edit_prioridad_id" name="prioridad_id" required>
+                                    {% for prioridad in prioridades %}
+                                    <option value="{{ prioridad.id }}">{{ prioridad.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Manejar el modal de edición
+        document.querySelectorAll('.edit-incident-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const incidentId = this.getAttribute('data-id');
+                const form = document.getElementById('editIncidentForm');
+                form.action = `/user/incidents/${incidentId}/update`;
+                
+                document.getElementById('edit_titulo').value = this.getAttribute('data-titulo');
+                document.getElementById('edit_descripcion').value = this.getAttribute('data-descripcion');
+                document.getElementById('edit_categoria_id').value = this.getAttribute('data-categoria');
+                document.getElementById('edit_prioridad_id').value = this.getAttribute('data-prioridad');
+                
+                const modal = new bootstrap.Modal(document.getElementById('editIncidentModal'));
+                modal.show();
+            });
+        });
+
+        // Mostrar mensajes flash
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    alert("{{ message }}");
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </script>
 </body>
 </html>
