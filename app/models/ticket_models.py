@@ -51,7 +51,7 @@ class Comentario(BaseModel):
 
     usuario = db.relationship('Usuario', backref='comentarios')
 
-class HistorialEstado(BaseModel):
+class HistorialEstado(db.Model):
     __tablename__ = 'historial_estados'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -60,8 +60,8 @@ class HistorialEstado(BaseModel):
     estado_nuevo_id = db.Column(db.Integer, db.ForeignKey('estados.id'), nullable=False)
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
     comentario = db.Column(db.Text, nullable=True)
-    fecha_cambio = db.Column(db.DateTime, default=datetime.utcnow)
-
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)  # Cambiar de fecha_cambio a created_at
+    
     estado_anterior = db.relationship('Estado', foreign_keys=[estado_anterior_id])
     estado_nuevo = db.relationship('Estado', foreign_keys=[estado_nuevo_id])
     usuario = db.relationship('Usuario', backref='cambios_estado')
