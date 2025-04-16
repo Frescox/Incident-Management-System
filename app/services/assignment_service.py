@@ -1,4 +1,5 @@
 from app.db.database import db
+from app.utils.aes_encryption import decrypt
 import random
 
 class AssignmentService:
@@ -16,7 +17,19 @@ class AssignmentService:
               AND u.estado = 'activo'
         """
         # rol_id = 2 (agente)
-        return self.db.execute_query(query, (2,))
+        agentes = self.db.execute_query(query, (2,))
+
+        # Desencriptamos los datos sensibles
+        for agente in agentes:
+            try:
+                agente['nombre'] = decrypt(agente['nombre']) if agente['nombre'] else ""
+                agente['apellido'] = decrypt(agente['apellido']) if agente['apellido'] else ""
+            except Exception as e:
+                print(f"[ERROR] Falló la desencriptación de nombre o apellido: {e}")
+                agente['nombre'] = "Desconocido"
+                agente['apellido'] = ""
+
+        return agentes
 
     def get_last_assigned_agent(self, categoria_id):
         """

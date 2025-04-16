@@ -1,6 +1,7 @@
 from flask import current_app
 from app.services.mail_service import send_email
 from app.db.database import db
+from app.utils.aes_encryption import decrypt
 
 class NotificationService:
     def __init__(self):
@@ -22,7 +23,15 @@ class NotificationService:
         result = self.db.execute_query(query, (incidencia_id,))
         if not result or not result[0].get("email"):
             raise ValueError("No se pudo encontrar el correo del usuario")
-        return result[0]["email"]
+       
+        # Desencriptar el correo
+        try:
+            email_desencriptado = decrypt(result[0]["email"])
+            return email_desencriptado
+        except Exception as e:
+            current_app.logger.error(f"Error al desencriptar el correo: {str(e)}")
+            raise ValueError("Error al desencriptar el correo del usuario")
+
 
     def notify_status_change(self, incidencia_id, nuevo_estado):
         """
