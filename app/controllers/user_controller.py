@@ -156,69 +156,57 @@ class UserController:
         if not usuario:
             return redirect(url_for('auth.index'))
 
-        # Get incident with all related data
-        incidencia = db.session.query(Incidencia).filter_by(
-            id=incident_id
-        ).join(
-            Estado, Incidencia.estado_id == Estado.id
-        ).join(
-            Prioridad, Incidencia.prioridad_id == Prioridad.id
-        ).join(
-            Categoria, Incidencia.categoria_id == Categoria.id
-        ).join(
-            Usuario, Incidencia.usuario_creador_id == Usuario.id
-        ).add_columns(
-            Incidencia.id,
-            Incidencia.titulo,
-            Incidencia.descripcion,
-            Incidencia.fecha_creacion,
-            Incidencia.fecha_ultima_actualizacion,
-            Estado.nombre.label('estado_nombre'),
-            Prioridad.nombre.label('prioridad_nombre'),
-            Categoria.nombre.label('categoria_nombre'),
-            Usuario.nombre.label('creador_nombre'),
-            Usuario.apellido.label('creador_apellido')
-        ).first()
+        # Consulta SQL directa (más control, pero menos ORM)
+        query = """
+            SELECT 
+                i.*,
+                e.nombre AS estado_nombre,
+                p.nombre AS prioridad_nombre,
+                c.nombre AS categoria_nombre,
+                u.nombre AS creador_nombre,
+                u.apellido AS creador_apellido
+            FROM incidencias i
+            JOIN estados e ON i.estado_id = e.id
+            JOIN prioridades p ON i.prioridad_id = p.id
+            JOIN categorias c ON i.categoria_id = c.id
+            JOIN usuarios u ON i.usuario_creador_id = u.id
+            WHERE i.id = :incident_id
+        """
+        incidencia = db.session.execute(query, {'incident_id': incident_id}).fetchone()
 
         if not incidencia or incidencia.usuario_creador_id != usuario.id:
             flash('No tienes permiso para ver esta incidencia', 'error')
             return redirect(url_for('user.dashboard'))
 
-        # Get comments with user data
-        comentarios = db.session.query(Comentario).filter_by(
-            incidencia_id=incident_id
-        ).join(
-            Usuario, Comentario.usuario_id == Usuario.id
-        ).add_columns(
-            Comentario.id,
-            Comentario.contenido,
-            Comentario.fecha_creacion,
-            Usuario.nombre.label('usuario_nombre'),
-            Usuario.apellido.label('usuario_apellido')
-        ).order_by(
-            Comentario.fecha_creacion.asc()
-        ).all()
+        # Obtener comentarios
+        comentarios = db.session.execute(
+            """
+            SELECT co.*, us.nombre AS usuario_nombre, us.apellido AS usuario_apellido
+            FROM comentarios co
+            JOIN usuarios us ON co.usuario_id = us.id
+            WHERE co.incidencia_id = :incident_id
+            ORDER BY co.fecha_creacion ASC
+            """,
+            {'incident_id': incident_id}
+        ).fetchall()
 
-        # Get status history
-        historial = db.session.query(HistorialEstado).filter_by(
-            incidencia_id=incident_id
-        ).join(
-            Estado, HistorialEstado.estado_anterior_id == Estado.id
-        ).join(
-            Estado, HistorialEstado.estado_nuevo_id == Estado.id
-        ).join(
-            Usuario, HistorialEstado.usuario_id == Usuario.id
-        ).add_columns(
-            HistorialEstado.id,
-            HistorialEstado.comentario,
-            HistorialEstado.fecha_cambio,
-            Estado.nombre.label('estado_anterior'),
-            Estado.nombre.label('estado_nuevo'),
-            Usuario.nombre.label('usuario_nombre'),
-            Usuario.apellido.label('usuario_apellido')
-        ).order_by(
-            HistorialEstado.fecha_cambio.desc()
-        ).all()
+        # Obtener historial
+        historial = db.session.execute(
+            """
+            SELECT h.*, 
+                ea.nombre AS estado_anterior_nombre,
+                en.nombre AS estado_nuevo_nombre,
+                us.nombre AS usuario_nombre,
+                us.apellido AS usuario_apellido
+            FROM historial_estados h
+            JOIN estados ea ON h.estado_anterior_id = ea.id
+            JOIN estados en ON h.estado_nuevo_id = en.id
+            JOIN usuarios us ON h.usuario_id = us.id
+            WHERE h.incidencia_id = :incident_id
+            ORDER BY h.fecha_cambio DESC
+            """,
+            {'incident_id': incident_id}
+        ).fetchall()
 
         nombre = decrypt(usuario.nombre)
         apellido = decrypt(usuario.apellido)
