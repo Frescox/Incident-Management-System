@@ -26,6 +26,7 @@ def init_routes(app):
     Args:
         app: La aplicación Flask
     """
+    # Rutas del usuario, agente y auth
     app.register_blueprint(auth_bp)
-    app.register_blueprint(user_bp)  # Rutas del usuario
+    app.register_blueprint(user_bp)
     app.register_blueprint(agent_bp) 

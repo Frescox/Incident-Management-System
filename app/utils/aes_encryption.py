@@ -17,8 +17,15 @@ def encrypt(text):
     return base64.b64encode(iv + encrypted).decode('utf-8')
 
 def decrypt(encrypted_text):
-    raw = base64.b64decode(encrypted_text)
-    iv = raw[:16]
-    cipher = AES.new(KEY, AES.MODE_CBC, iv)
-    decrypted = cipher.decrypt(raw[16:]).decode('utf-8')
-    return decrypted.strip()
+    try:
+        raw = base64.b64decode(encrypted_text)
+        if len(raw) < 16:
+            raise ValueError("Encrypted text is too short to contain a valid IV.")
+        iv = raw[:16]
+        cipher = AES.new(KEY, AES.MODE_CBC, iv)
+        decrypted = cipher.decrypt(raw[16:]).decode('utf-8')
+        return decrypted.strip()
+    except Exception as e:
+        print(f"Error decrypting: {e}")
+        return None
+

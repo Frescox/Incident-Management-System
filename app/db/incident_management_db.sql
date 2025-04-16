@@ -111,7 +111,6 @@ CREATE TABLE `log_actividad` (
   `entidad` varchar(50) DEFAULT NULL,
   `entidad_id` int(11) DEFAULT NULL,
   `detalles` text DEFAULT NULL,
-  `ip_address` varchar(45) DEFAULT NULL,
   `user_agent` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -188,7 +187,6 @@ INSERT INTO `roles` (`id`, `nombre`, `descripcion`, `created_at`, `updated_at`) 
 CREATE TABLE `sesiones` (
   `id` varchar(128) NOT NULL,
   `usuario_id` int(11) DEFAULT NULL,
-  `ip_address` varchar(45) NOT NULL,
   `user_agent` text DEFAULT NULL,
   `payload` text NOT NULL,
   `last_activity` int(11) NOT NULL,
@@ -210,7 +208,7 @@ CREATE TABLE `usuarios` (
   `password` varchar(255) NOT NULL,
   `rol_id` int(11) NOT NULL,
   `estado` tinyint(1) DEFAULT 1,
-  `telefono` varchar(20) DEFAULT NULL,
+  `telefono` varchar(100) DEFAULT NULL,
   `metodo_verificacion` enum('email','sms') DEFAULT NULL,
   `otp` varchar(6) DEFAULT NULL,
   `otp_expira` int(11) DEFAULT NULL,
@@ -223,11 +221,6 @@ CREATE TABLE `usuarios` (
 --
 -- Volcado de datos para la tabla `usuarios`
 --
-
-INSERT INTO `usuarios` (`id`, `nombre`, `apellido`, `email`, `password`, `rol_id`, `estado`, `telefono`, `metodo_verificacion`, `otp`, `otp_expira`, `verificado`, `ultimo_login`, `created_at`, `updated_at`) VALUES
-(46, '+a18JdrcDS2MXYjAPbz40+dxDu5AhQJBzJUDmzdW3cY=', 'AJ/39lHwscJOzex1UxRz0g91VPE4RjxJHpne37U2dfo=', 'm7/MDLhEofbLV6wO1HdFot72Nabobwx8+w/uTDyYoOBuHdFOzpR+1mgC/gQ3tHb8', 'Saz1ztu5GnKwRfEbSvESR6GO18TcQLjevmbY5XVPdrk=', 3, 1, NULL, 'email', NULL, NULL, 1, '2025-04-14 21:26:24', '2025-04-15 04:23:40', '2025-04-15 04:26:24'),
-(47, 'ijmsuf2kd51bAOrwhR4ui4t2ngtq/qzUGeg6JZpQKk0=', 'lXtk82u6fohnZdxJRJQ/lkusQts14doyZ/EiLSiwBPA=', '3WsTUQs2nTXDMvnRpMoJsu/sJY7FYvCXcfeTwieJiwiI/4pIga8wPW7jvm0BC8zz', 'HoCRBxKVARi+llPlHk80r48DtUkSe2rocpOqy/UFeTo=', 2, 1, NULL, 'email', NULL, NULL, 1, '2025-04-14 21:26:08', '2025-04-15 04:25:06', '2025-04-15 04:26:08');
-
 --
 -- Índices para tablas volcadas
 --
