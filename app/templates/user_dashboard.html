@@ -1,4 +1,3 @@
-<!-- app/templates/user_dashboard.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -54,9 +53,29 @@
         .priority-low {
             border-left: 4px solid #0dcaf0;
         }
+        .flashed-messages {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
+    <!-- Mensajes Flash -->
+    <div class="flashed-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
     <div class="dashboard-container">
         <div class="user-info">
             <div class="d-flex justify-content-between align-items-center">
@@ -70,61 +89,60 @@
             </div>
         </div>
 
-        <!-- Formulario para nueva incidencia (modal) -->
+        <!-- Botón para nueva incidencia -->
         <button type="button" class="btn btn-primary mb-4" data-bs-toggle="modal" data-bs-target="#newIncidentModal">
             <i class="bi bi-plus-circle"></i> Nueva Incidencia
         </button>
 
         <!-- Modal para nueva incidencia -->
-<!-- Solo la sección del modal de nueva incidencia (el resto del archivo permanece igual) -->
-    <div class="modal fade" id="newIncidentModal" tabindex="-1" aria-labelledby="newIncidentModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="newIncidentModalLabel">Nueva Incidencia</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal fade" id="newIncidentModal" tabindex="-1" aria-labelledby="newIncidentModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="newIncidentModalLabel">Nueva Incidencia</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form method="POST" action="{{ url_for('user.create_incident') }}">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="titulo" class="form-label">Título</label>
+                                <input type="text" class="form-control" id="titulo" name="titulo" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="descripcion" class="form-label">Descripción</label>
+                                <textarea class="form-control" id="descripcion" name="descripcion" rows="4" required></textarea>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="categoria_id" class="form-label">Categoría</label>
+                                    <select class="form-select" id="categoria_id" name="categoria_id" required>
+                                        {% for categoria in categorias %}
+                                        <option value="{{ categoria.id }}">{{ categoria.nombre }}</option>
+                                        {% else %}
+                                        <option value="" disabled>No hay categorías disponibles</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="prioridad_id" class="form-label">Prioridad</label>
+                                    <select class="form-select" id="prioridad_id" name="prioridad_id" required>
+                                        {% for prioridad in prioridades %}
+                                        <option value="{{ prioridad.id }}">{{ prioridad.nombre }}</option>
+                                        {% else %}
+                                        <option value="" disabled>No hay prioridades disponibles</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Crear Incidencia</button>
+                        </div>
+                    </form>
                 </div>
-                <form method="POST" action="{{ url_for('user.create_incident') }}">
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="titulo" class="form-label">Título</label>
-                            <input type="text" class="form-control" id="titulo" name="titulo" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="descripcion" class="form-label">Descripción</label>
-                            <textarea class="form-control" id="descripcion" name="descripcion" rows="4" required></textarea>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="categoria_id" class="form-label">Categoría</label>
-                                <select class="form-select" id="categoria_id" name="categoria_id" required>
-                                    {% for categoria in categorias %}
-                                    <option value="{{ categoria.id }}">{{ categoria.nombre }}</option>
-                                    {% else %}
-                                    <option value="" disabled>No hay categorías disponibles</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="prioridad_id" class="form-label">Prioridad</label>
-                                <select class="form-select" id="prioridad_id" name="prioridad_id" required>
-                                    {% for prioridad in prioridades %}
-                                    <option value="{{ prioridad.id }}">{{ prioridad.nombre }}</option>
-                                    {% else %}
-                                    <option value="" disabled>No hay prioridades disponibles</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Crear Incidencia</button>
-                    </div>
-                </form>
             </div>
         </div>
-    </div>
 
         <!-- Lista de incidencias -->
         <h3 class="mb-4">Mis Incidencias</h3>
@@ -193,50 +211,50 @@
             </table>
         </div>
         {% endif %}
-    </div>
 
-    <!-- Modal para editar incidencia -->
-    <div class="modal fade" id="editIncidentModal" tabindex="-1" aria-labelledby="editIncidentModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editIncidentModalLabel">Editar Incidencia</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <!-- Modal para editar incidencia -->
+        <div class="modal fade" id="editIncidentModal" tabindex="-1" aria-labelledby="editIncidentModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editIncidentModalLabel">Editar Incidencia</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form method="POST" id="editIncidentForm">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="edit_titulo" class="form-label">Título</label>
+                                <input type="text" class="form-control" id="edit_titulo" name="titulo" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="edit_descripcion" class="form-label">Descripción</label>
+                                <textarea class="form-control" id="edit_descripcion" name="descripcion" rows="4" required></textarea>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_categoria_id" class="form-label">Categoría</label>
+                                    <select class="form-select" id="edit_categoria_id" name="categoria_id" required>
+                                        {% for categoria in categorias %}
+                                        <option value="{{ categoria.id }}">{{ categoria.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="edit_prioridad_id" class="form-label">Prioridad</label>
+                                    <select class="form-select" id="edit_prioridad_id" name="prioridad_id" required>
+                                        {% for prioridad in prioridades %}
+                                        <option value="{{ prioridad.id }}">{{ prioridad.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                        </div>
+                    </form>
                 </div>
-                <form method="POST" id="editIncidentForm">
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="edit_titulo" class="form-label">Título</label>
-                            <input type="text" class="form-control" id="edit_titulo" name="titulo" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="edit_descripcion" class="form-label">Descripción</label>
-                            <textarea class="form-control" id="edit_descripcion" name="descripcion" rows="4" required></textarea>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="edit_categoria_id" class="form-label">Categoría</label>
-                                <select class="form-select" id="edit_categoria_id" name="categoria_id" required>
-                                    {% for categoria in categorias %}
-                                    <option value="{{ categoria.id }}">{{ categoria.nombre }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="edit_prioridad_id" class="form-label">Prioridad</label>
-                                <select class="form-select" id="edit_prioridad_id" name="prioridad_id" required>
-                                    {% for prioridad in prioridades %}
-                                    <option value="{{ prioridad.id }}">{{ prioridad.nombre }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>
@@ -260,14 +278,13 @@
             });
         });
 
-        // Mostrar mensajes flash
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    alert("{{ message }}");
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+        // Cerrar automáticamente los mensajes flash después de 5 segundos
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                bootstrap.Alert.getInstance(alert).close();
+            });
+        }, 5000);
     </script>
 </body>
 </html>

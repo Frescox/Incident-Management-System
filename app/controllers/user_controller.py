@@ -131,6 +131,13 @@ class UserController:
             return redirect(url_for('user.dashboard'))
 
         try:
+            # Eliminar comentarios asociados primero si es necesario
+            Comentario.query.filter_by(incidencia_id=incident_id).delete()
+            
+            # Eliminar historial de estados
+            HistorialEstado.query.filter_by(incidencia_id=incident_id).delete()
+            
+            # Finalmente eliminar la incidencia
             db.session.delete(incidencia)
             db.session.commit()
             flash('Incidencia eliminada exitosamente', 'success')

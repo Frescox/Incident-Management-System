@@ -18,6 +18,8 @@ auth_bp.route('/logout', methods=['GET'])(AuthController.logout)
 user_bp.route('/dashboard', methods=['GET'])(UserController.dashboard)
 user_bp.route('/incidents/create', methods=['POST'])(UserController.create_incident)
 user_bp.route('/incidents/<int:incident_id>', methods=['GET'])(UserController.view_incident)
+user_bp.route('/incidents/<int:incident_id>/update', methods=['POST'])(UserController.update_incident)
+user_bp.route('/incidents/<int:incident_id>/delete', methods=['POST'])(UserController.delete_incident)
 user_bp.route('/incidents/<int:incident_id>/comments', methods=['POST'])(UserController.add_comment)
 
 # Agent Routes
