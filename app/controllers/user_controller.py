@@ -1,7 +1,10 @@
 from flask import render_template, session, redirect, url_for, request, flash, jsonify
+from flask import current_app
 from app.models.user import Usuario
 from app.models.ticket_models import Incidencia, Comentario, HistorialEstado
 from app.models.catalog_models import Estado, Prioridad, Categoria
+from app.services.assignment_service import AssignmentService
+from app.services.notification_service import NotificationService
 from app.utils.aes_encryption import decrypt
 from datetime import datetime
 from app.models import db  # Importa el SQLAlchemy db
@@ -72,6 +75,9 @@ class UserController:
             if not all([titulo, descripcion, categoria_id, prioridad_id]):
                 flash('Todos los campos son requeridos', 'error')
                 return redirect(url_for('user.dashboard'))
+            
+            assignment_service = AssignmentService()
+            agente_asignado_id = assignment_service.assign_agent(categoria_id)
 
             nueva_incidencia = Incidencia(
                 titulo=titulo,
@@ -81,7 +87,8 @@ class UserController:
                 estado_id=1,  # Estado "nuevo"
                 usuario_creador_id=session['user_id'],
                 fecha_creacion=datetime.utcnow(),
-                fecha_ultima_actualizacion=datetime.utcnow()
+                fecha_ultima_actualizacion=datetime.utcnow(),
+                agente_asignado_id=agente_asignado_id
             )
 
             db.session.add(nueva_incidencia)
@@ -249,5 +256,43 @@ class UserController:
             except Exception as e:
                 db.session.rollback()
                 flash(f'Error al añadir el comentario: {str(e)}', 'error')
+
+        return redirect(url_for('user.view_incident', incident_id=incident_id))
+    
+    @staticmethod
+    def update_incident_status(incident_id):
+        if 'user_id' not in session:
+            return redirect(url_for('auth.index'))
+
+        incidencia = Incidencia.query.get(incident_id)
+        if not incidencia or incidencia.usuario_creador_id != session['user_id']:
+            flash('No tienes permiso para actualizar esta incidencia', 'error')
+            return redirect(url_for('user.dashboard'))
+
+        if request.method == 'POST':
+            nuevo_estado_id = request.form.get('nuevo_estado')
+            if not nuevo_estado_id:
+                flash('Debe seleccionar un nuevo estado.', 'error')
+                return redirect(url_for('user.view_incident', incident_id=incident_id))
+
+            incidencia.estado_id = nuevo_estado_id
+            incidencia.fecha_ultima_actualizacion = datetime.utcnow()
+
+            try:
+                db.session.commit()
+
+                # Aquí notificamos por correo
+                try:
+                    notification_service = NotificationService()
+                    estado = Estado.query.get(nuevo_estado_id)
+                    nombre_estado = estado.nombre if estado else "Actualizado"
+                    notification_service.notify_status_change(incident_id, nombre_estado)
+                except Exception as e:
+                    current_app.logger.error(f"Error al notificar cambio de estado: {str(e)}")
+
+                flash('Estado de la incidencia actualizado exitosamente.', 'success')
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Error al actualizar el estado de la incidencia: {str(e)}', 'error')
 
         return redirect(url_for('user.view_incident', incident_id=incident_id))
