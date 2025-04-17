@@ -3,57 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión de Incidencias</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Panel de Control del Agente</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         body {
             background-color: #f8f9fa;
         }
-        .auth-container {
-            max-width: 450px;
-            margin: 50px auto;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
             background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
         }
-        .auth-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .nav-tabs {
+        .user-info {
+            background-color: #f1f8ff;
+            padding: 20px;
+            border-radius: 8px;
             margin-bottom: 20px;
         }
-        .form-group {
-            margin-bottom: 20px;
+        .badge-new {
+            background-color: #0d6efd;
         }
-        .auth-footer {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 0.9rem;
+        .badge-in-progress {
+            background-color: #fd7e14;
         }
-        .logout-btn {
-            display: flex;
-            justify-content: center;
-            margin-top: 20px;
+        .badge-resolved {
+            background-color: #198754;
+        }
+        .badge-closed {
+            background-color: #6c757d;
+        }
+        .priority-high {
+            border-left: 4px solid #dc3545;
+        }
+        .priority-medium {
+            border-left: 4px solid #ffc107;
+        }
+        .priority-low {
+            border-left: 4px solid #0dcaf0;
+        }
+        .flashed-messages {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="auth-container">
-            <div class="auth-header">
-                <h2>Welcome to Agent Dashboard</h2>
-                <h1>Bienvenido, {{ nombre }} {{ apellido }}</h1>
-                <p>Tu correo: {{ correo }}</p>
-            </div>
-            <div class="logout-btn">
-                <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">Cerrar sesión</a>
-            </div>
-            <div class="auth-footer">
-                <p>&copy; 2025 Sistema de Gestión de Incidencias</p>
-            </div>
-        </div>
+    <!-- Mensajes Flash -->
+    <div class="flashed-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
     </div>
+
+    <div class="dashboard-container">
+        <div class="user-info d-flex justify-content-between align-items-center">
+            <div>
+                <h2>Bienvenido, {{ nombre }} {{ apellido }}</h2>
+                <p class="mb-0">Correo: {{ correo }}</p>
+            </div>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">
+                <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+            </a>
+        </div>
+
+        <h3 class="mb-4">Incidencias Asignadas</h3>
+
+        {% if not incidencias %}
+        <div class="alert alert-info">
+            No tienes incidencias asignadas actualmente.
+        </div>
+        {% else %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Título</th>
+                        <th>Categoría</th>
+                        <th>Prioridad</th>
+                        <th>Estado</th>
+                        <th>Fecha de Creación</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for incidencia in incidencias %}
+                    <tr class="align-middle {% if incidencia.prioridad.nombre.lower() == 'alta' %}priority-high
+                                          {% elif incidencia.prioridad.nombre.lower() == 'media' %}priority-medium
+                                          {% else %}priority-low{% endif %}">
+                        <td>{{ incidencia.id }}</td>
+                        <td>{{ incidencia.titulo }}</td>
+                        <td>{{ incidencia.categoria.nombre }}</td>
+                        <td>{{ incidencia.prioridad.nombre|capitalize }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if incidencia.estado.nombre.lower() == 'nuevo' %}badge-new
+                                {% elif incidencia.estado.nombre.lower() == 'en progreso' %}badge-in-progress
+                                {% elif incidencia.estado.nombre.lower() == 'resuelto' %}badge-resolved
+                                {% else %}badge-closed{% endif %}">
+                                {{ incidencia.estado.nombre|title }}
+                            </span>
+                        </td>
+                        <td>{{ incidencia.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>
+                            <a href="{{ url_for('agent.view_incident', incident_id=incidencia.id) }}" 
+                               class="btn btn-sm btn-outline-primary" title="Ver">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Cerrar automáticamente los mensajes flash después de 5 segundos
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+    </script>
 </body>
 </html>
