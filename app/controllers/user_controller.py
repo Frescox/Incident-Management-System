@@ -77,7 +77,13 @@ class UserController:
                 return redirect(url_for('user.dashboard'))
             
             assignment_service = AssignmentService()
-            agente_asignado_id = assignment_service.assign_agent(categoria_id)
+
+            try:
+                agente_asignado_id = assignment_service.assign_agent()
+            except ValueError as e:
+                flash(str(e), 'error')
+                return redirect(url_for('user.dashboard'))
+            
 
             nueva_incidencia = Incidencia(
                 titulo=titulo,
