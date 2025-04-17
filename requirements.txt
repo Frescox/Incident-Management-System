@@ -1,7 +1,7 @@
-Flask==2.2.5
-Flask-Mail==0.9.1
-twilio==8.0.0
-mysql-connector-python==8.0.32
-python-dotenv==1.0.0
-Werkzeug==2.2.3
-pycryptodome
+Flask==2.3.2
+Flask_Mail==0.9.1
+flask_sqlalchemy==3.1.1
+mysql_connector_repackaged==0.3.1
+pycryptodome==3.17
+python-dotenv==1.1.0
+twilio==8.3.0

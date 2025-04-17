@@ -1,5 +1,7 @@
 from flask import request, render_template, redirect, url_for, session, flash, jsonify
 from app.models.user import Usuario
+from app.models.ticket_models import Incidencia, Comentario, HistorialEstado
+from app.models.catalog_models import Estado, Prioridad, Categoria
 from app.services.mail_service import send_email
 from app.services.sms_service import send_sms
 from app.utils.aes_encryption import encrypt, decrypt

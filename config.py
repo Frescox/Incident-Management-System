@@ -1,12 +1,9 @@
 import os
 from dotenv import load_dotenv
 
-# Cargar variables de entorno desde archivo .env
 load_dotenv()
 
 class Config:
-    """Configuración base para la aplicación Flask"""
-    # Configuración general
     SECRET_KEY = os.getenv('SECRET_KEY', 'clave_secreta_predeterminada')
     DEBUG = False
     
@@ -15,6 +12,10 @@ class Config:
     DB_USER = os.getenv('DB_USER', 'root')
     DB_PASSWORD = os.getenv('DB_PASSWORD', '')
     DB_NAME = os.getenv('DB_NAME', 'sistema_incidencias')
+    
+    # Configuración de SQLAlchemy
+    SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}'
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Configuración de Flask-Mail
     MAIL_SERVER = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
@@ -30,16 +31,12 @@ class Config:
     TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER', '+19787310619')  # este es el nuevo bueno
     TWILIO_VERIFY_SERVICE_SID = os.getenv('TWILIO_VERIFY_SERVICE_SID', 'VA972dfeedff24e384203bfce4cf333996')  # sigue igual si ya lo configuraste
 
-
 class DevelopmentConfig(Config):
-    """Configuración para entorno de desarrollo"""
     DEBUG = True
 
 class ProductionConfig(Config):
-    """Configuración para entorno de producción"""
     DEBUG = False
 
-# Diccionario con las configuraciones disponibles
 config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,

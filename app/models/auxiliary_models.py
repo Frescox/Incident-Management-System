@@ -1,3 +1,4 @@
+# app/models/auxiliary_models.py
 from .core import db, BaseModel
 
 class Adjunto(BaseModel):
@@ -8,13 +9,6 @@ class Adjunto(BaseModel):
     ruta_archivo = db.Column(db.String(255), nullable=False)
     tipo_archivo = db.Column(db.String(100), nullable=False)
     tamaño_archivo = db.Column(db.Integer, nullable=False)
-
-class Comentario(BaseModel):
-    __tablename__ = 'comentarios'
-    id = db.Column(db.Integer, primary_key=True)
-    incidencia_id = db.Column(db.Integer, db.ForeignKey('incidencias.id', ondelete='CASCADE'), nullable=False)
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
-    contenido = db.Column(db.Text, nullable=False)
 
 class LogActividad(BaseModel):
     __tablename__ = 'log_actividad'
