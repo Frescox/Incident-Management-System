@@ -2,6 +2,8 @@ from flask import render_template, session, redirect, url_for, request, flash, j
 from app.models.user import Usuario
 from app.models.ticket_models import Incidencia, Comentario, HistorialEstado
 from app.models.catalog_models import Estado, Prioridad, Categoria
+from app.services.assignment_service import AssignmentService
+from app.services.notification_service import NotificationService
 from app.utils.aes_encryption import decrypt
 from datetime import datetime
 from app.models import db  # Importa el SQLAlchemy db
@@ -72,6 +74,15 @@ class UserController:
             if not all([titulo, descripcion, categoria_id, prioridad_id]):
                 flash('Todos los campos son requeridos', 'error')
                 return redirect(url_for('user.dashboard'))
+            
+            assignment_service = AssignmentService()
+
+            try:
+                agente_asignado_id = assignment_service.assign_agent()
+            except ValueError as e:
+                flash(str(e), 'error')
+                return redirect(url_for('user.dashboard'))
+            
 
             nueva_incidencia = Incidencia(
                 titulo=titulo,
@@ -81,7 +92,8 @@ class UserController:
                 estado_id=1,  # Estado "nuevo"
                 usuario_creador_id=session['user_id'],
                 fecha_creacion=datetime.utcnow(),
-                fecha_ultima_actualizacion=datetime.utcnow()
+                fecha_ultima_actualizacion=datetime.utcnow(),
+                agente_asignado_id=agente_asignado_id
             )
 
             db.session.add(nueva_incidencia)

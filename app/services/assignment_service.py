@@ -6,20 +6,20 @@ class AssignmentService:
     def __init__(self):
         self.db = db
 
-    def get_agents_by_category(self, categoria_id):
+    def get_available_agents(self):
         """
-        Devuelve una lista de agentes disponibles para una categoría específica.
+        Devuelve agentes activos que no tienen ninguna incidencia asignada.
         """
         query = """
             SELECT u.id, u.nombre, u.apellido
             FROM usuarios u
+            LEFT JOIN incidencias i ON u.id = i.agente_asignado_id
             WHERE u.rol_id = %s
-              AND u.estado = 'activo'
+            AND u.estado = 1
+            AND i.id IS NULL
         """
-        # rol_id = 2 (agente)
         agentes = self.db.execute_query(query, (2,))
 
-        # Desencriptamos los datos sensibles
         for agente in agentes:
             try:
                 agente['nombre'] = decrypt(agente['nombre']) if agente['nombre'] else ""
@@ -30,38 +30,54 @@ class AssignmentService:
                 agente['apellido'] = ""
 
         return agentes
-
-    def get_last_assigned_agent(self, categoria_id):
+    
+    def get_agent_with_least_incidents(self):
         """
-        Consulta al último agente asignado en esta categoría.
+        Devuelve el agente con menos incidencias asignadas.
         """
         query = """
-            SELECT i.agente_asignado_id
-            FROM incidencias i
-            JOIN categorias c ON i.categoria_id = c.id
-            WHERE c.id = %s AND i.agente_asignado_id IS NOT NULL
-            ORDER BY i.fecha_creacion DESC
+            SELECT u.id, COUNT(i.id) AS num_incidencias
+            FROM usuarios u
+            LEFT JOIN incidencias i ON u.id = i.agente_asignado_id
+            WHERE u.rol_id = %s
+            AND u.estado = 1
+            GROUP BY u.id
+            ORDER BY num_incidencias ASC
             LIMIT 1
         """
-        results = self.db.execute_query(query, (categoria_id,))
-        return results[0]['agente_asignado_id'] if results else None
+        agentes = self.db.execute_query(query, (2,))
+        return agentes[0]['id'] if agentes else None
 
-    def assign_agent(self, categoria_id):
+
+
+    # def get_last_assigned_agent(self, categoria_id):
+    #     """
+    #     Consulta al último agente asignado en esta categoría.
+    #     """
+    #     query = """
+    #         SELECT i.agente_asignado_id
+    #         FROM incidencias i
+    #         JOIN categorias c ON i.categoria_id = c.id
+    #         WHERE c.id = %s AND i.agente_asignado_id IS NOT NULL
+    #         ORDER BY i.fecha_creacion DESC
+    #         LIMIT 1
+    #     """
+    #     results = self.db.execute_query(query, (categoria_id,))
+    #     return results[0]['agente_asignado_id'] if results else None
+
+    def assign_agent(self):
         """
-        Algoritmo de asignación rotativa simple.
+        Asigna un agente activo disponible. Si todos tienen incidencias,
+        asigna al agente con menos carga de incidencias.
         """
-        agentes = self.get_agents_by_category(categoria_id)
-        if not agentes:
-            return None  # No hay agentes disponibles
+        agentes = self.get_available_agents()
+        if agentes:
+            return random.choice(agentes)['id']  # Asignas a un agente sin incidencias
 
-        ultimo = self.get_last_assigned_agent(categoria_id)
+        agente_id = self.get_agent_with_least_incidents()
+        if agente_id:
+            return agente_id  # Asignas al que tenga menos incidencias
 
-        # Rotación: buscar el siguiente agente después del último asignado
-        if ultimo:
-            for i, agente in enumerate(agentes):
-                if agente['id'] == ultimo:
-                    siguiente_index = (i + 1) % len(agentes)
-                    return agentes[siguiente_index]['id']
-        
-        # Si no hay historial, o no se encontró el último en la lista
-        return agentes[0]['id']  # O random.choice(agentes)['id'] para aleatorio
+        raise ValueError("No hay agentes disponibles.")
+
+

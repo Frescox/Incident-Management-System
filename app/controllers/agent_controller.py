@@ -1,4 +1,5 @@
 from flask import render_template, session, redirect, url_for, request, flash
+from flask import current_app
 from app.models.user import Usuario
 from app.models.ticket_models import Incidencia, Comentario, HistorialEstado
 from app.models.catalog_models import Estado, Prioridad, Categoria
@@ -137,7 +138,21 @@ class AgentController:
             comentario = request.form.get('comentario', '')
 
             if estado_id and estado_id != incidencia.estado_id:
+
                 incidencia.change_status(estado_id, usuario.id, comentario)
+
+                # Enviar notificación al usuario
+                try:
+                    from app.services.notification_service import NotificationService
+                    notification_service = NotificationService()
+
+                    # Aquí debes obtener el nombre o descripción del nuevo estado
+                    nuevo_estado_nombre = incidencia.estado.nombre if incidencia.estado else "actualizado"
+                    
+                    notification_service.notify_status_change(incident_id, nuevo_estado_nombre)
+                except Exception as e:
+                    current_app.logger.error(f"Error al enviar notificación: {str(e)}")
+
                 flash('Estado actualizado correctamente', 'success')
             else:
                 flash('No se realizaron cambios', 'info')
