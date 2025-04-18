@@ -110,6 +110,13 @@ class AgentController:
         nombre = decrypt(usuario.nombre)
         apellido = decrypt(usuario.apellido)
         correo = session.get('user_email')
+        
+        
+        for comentario in comentarios:
+            if comentario.usuario:
+                comentario.usuario.nombre = decrypt(comentario.usuario.nombre)
+                comentario.usuario.apellido = decrypt(comentario.usuario.apellido)
+    # -------------------------------------------------------------------------
 
         return render_template('agent_view_incident.html',
                             nombre=nombre,

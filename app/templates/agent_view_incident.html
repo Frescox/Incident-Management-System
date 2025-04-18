@@ -70,11 +70,11 @@
             <h3>Incidencia #{{ incidencia.id }}: {{ incidencia.titulo }}</h3>
             <div class="d-flex justify-content-between align-items-center">
                 <span class="badge 
-                    {% if incidencia.estado_nombre == 'nuevo' %}bg-primary
-                    {% elif incidencia.estado_nombre == 'en_progreso' %}bg-warning text-dark
-                    {% elif incidencia.estado_nombre == 'resuelto' %}bg-success
+                    {% if incidencia.estado.nombre == 'nuevo' %}bg-primary
+                    {% elif incidencia.estado.nombre == 'en_progreso' %}bg-warning text-dark
+                    {% elif incidencia.estado.nombre == 'resuelto' %}bg-success
                     {% else %}bg-secondary{% endif %}">
-                    {{ incidencia.estado_nombre|replace('_', ' ')|title }}
+                    {{ incidencia.estado.nombre|replace('_', ' ')|title }}
                 </span>
                 <small class="text-muted">Creada: {{ incidencia.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</small>
             </div>
@@ -84,11 +84,11 @@
             <div class="row mb-3">
                 <div class="col-md-6">
                     <p class="detail-label">Categoría</p>
-                    <p>{{ incidencia.categoria_nombre }}</p>
+                    <p>{{ incidencia.categoria.nombre }}</p>
                 </div>
                 <div class="col-md-6">
                     <p class="detail-label">Prioridad</p>
-                    <p>{{ incidencia.prioridad_nombre|capitalize }}</p>
+                    <p>{{ incidencia.prioridad.nombre|capitalize }}</p>
                 </div>
             </div>
             
@@ -124,8 +124,8 @@
                     <div class="d-flex justify-content-between">
                         <strong>{{ comentario.usuario.nombre }} {{ comentario.usuario.apellido }}</strong>
                         <small class="text-muted">
-                            {% if comentario.created_at %}
-                              {{ comentario.created_at.strftime('%d/%m/%Y %H:%M') }}
+                            {% if comentario.fecha_creacion %}
+                              {{ comentario.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
                             {% else %}
                               Fecha no disponible
                             {% endif %}
