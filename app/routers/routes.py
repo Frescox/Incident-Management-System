@@ -2,10 +2,13 @@ from flask import Blueprint
 from app.controllers.auth_controller import AuthController
 from app.controllers.user_controller import UserController
 from app.controllers.agent_controller import AgentController
+from app.controllers.admin_controller import AdminController
+
 
 auth_bp = Blueprint('auth', __name__)
 user_bp = Blueprint('user', __name__, url_prefix='/user')
 agent_bp = Blueprint('agent', __name__, url_prefix='/agent')
+admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 # Auth Routes
 auth_bp.route('/', methods=['GET'])(AuthController.index)
@@ -34,8 +37,15 @@ agent_bp.route('/incidents/assign/<int:incident_id>', methods=['POST'])(AgentCon
 agent_bp.route('/incidents/change-status/<int:incident_id>', methods=['POST'])(AgentController.change_status)
 agent_bp.route('/incidents/resolve/<int:incident_id>', methods=['POST'])(AgentController.resolve_incident)
 
+# Admin Routes
+admin_bp.route('/dashboard', methods=['GET'])(AdminController.dashboard)
+admin_bp.route('/incidents/<int:incident_id>', methods=['GET'])(AdminController.view_incident)
+
 
 def init_routes(app):
     app.register_blueprint(auth_bp)
     app.register_blueprint(user_bp)
     app.register_blueprint(agent_bp)
+    app.register_blueprint(admin_bp)
+
+    
