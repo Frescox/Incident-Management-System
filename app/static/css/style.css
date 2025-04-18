@@ -1,34 +1,479 @@
+/* Dark Blue Theme for the Incident Management System */
+:root {
+  --primary-bg: #121a2b;
+  --secondary-bg: #1e2a45;
+  --card-bg: #233252;
+  --input-bg: #2c3c5c;
+  --accent-blue: #4a90e2;
+  --accent-blue-hover: #5da2ff;
+  --light-blue: #7cb9f5;
+  --success-color: #48c78e;
+  --danger-color: #f14668;
+  --text-primary: #e6e9f0;
+  --text-secondary: #b0b8cc;
+  --text-muted: #8590a6;
+  --border-color: #364156;
+  --transition: all 0.3s ease;
+  --shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  --glow: 0 0 15px rgba(74, 144, 226, 0.3);
+}
+
 body {
-    font-family: Arial, sans-serif;
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--primary-bg);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 20px 0;
 }
 
-.login-container, .verify-container {
-    max-width: 400px;
-    margin: 50px auto;
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    background-color: #f9f9f9;
+.container {
+  max-width: 900px;
+  margin: 0 auto;
 }
 
-input {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 15px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+.container-card {
+  background-color: var(--card-bg);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 35px;
+  margin-bottom: 30px;
+  transition: var(--transition);
+  border: 1px solid rgba(74, 144, 226, 0.1);
 }
 
-button {
-    width: 100%;
-    padding: 10px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
+.container-card:hover {
+  box-shadow: var(--glow);
+  transform: translateY(-2px);
 }
 
-button:hover {
-    background-color: #45a049;
+/* Header Styles */
+.auth-header {
+  margin-bottom: 2rem;
+}
+
+.section-title {
+  color: var(--text-primary);
+  font-weight: 600;
+  position: relative;
+  display: inline-block;
+  padding-bottom: 10px;
+}
+
+.section-title::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+/* Tab Navigation */
+.nav-tabs {
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 20px;
+}
+
+.nav-tabs .nav-item {
+  margin-bottom: -1px;
+}
+
+.nav-tabs .nav-link {
+  color: var(--text-secondary);
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  font-weight: 500;
+  padding: 10px 20px;
+  transition: var(--transition);
+  background-color: transparent;
+}
+
+.nav-tabs .nav-link:hover {
+  border-color: transparent;
+  color: var(--light-blue);
+}
+
+.nav-tabs .nav-link.active {
+  color: var(--accent-blue);
+  background-color: transparent;
+  border-color: transparent;
+  border-bottom: 2px solid var(--accent-blue);
+}
+
+/* Form Controls */
+.form-label {
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.form-control {
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  padding: 10px 15px;
+  transition: var(--transition);
+}
+
+.form-control:focus {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 0.25rem rgba(74, 144, 226, 0.25);
+}
+
+.form-check-input {
+  background-color: var(--input-bg);
+  border-color: var(--border-color);
+}
+
+.form-check-input:checked {
+  background-color: var(--accent-blue);
+  border-color: var(--accent-blue);
+}
+
+.form-check-label {
+  color: var(--text-secondary);
+}
+
+.form-text.text-muted {
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  color: var(--text-muted);
+}
+
+/* Buttons */
+.btn {
+  padding: 10px 20px;
+  font-weight: 500;
+  border-radius: 6px;
+  transition: var(--transition);
+}
+
+.btn-primary {
+  background-color: var(--accent-blue);
+  border-color: var(--accent-blue);
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background-color: var(--accent-blue-hover);
+  border-color: var(--accent-blue-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+}
+
+.btn-link {
+  color: var(--accent-blue);
+  text-decoration: none;
+}
+
+.btn-link:hover {
+  color: var(--light-blue);
+  text-decoration: underline;
+}
+
+/* Alert Messages */
+.alert {
+  border-radius: 6px;
+  padding: 12px 20px;
+  margin-top: 20px;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transform: translateY(-10px);
+  animation: fadeInDown 0.5s forwards;
+}
+
+.alert-danger {
+  background-color: rgba(241, 70, 104, 0.1);
+  border-left: 4px solid var(--danger-color);
+  color: #f5a4b8;
+}
+
+.alert-success {
+  background-color: rgba(72, 199, 142, 0.1);
+  border-left: 4px solid var(--success-color);
+  color: #9de6c2;
+}
+
+/* OTP Verification Section */
+.verification-container {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: var(--transition);
+}
+
+.verification-container.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#otp-code {
+  letter-spacing: 5px;
+  font-size: 1.2rem;
+  text-align: center;
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+}
+
+/* Footer */
+.auth-footer {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* Animations */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(74, 144, 226, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(74, 144, 226, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(74, 144, 226, 0);
+  }
+}
+
+@keyframes glow {
+  from {
+    box-shadow: 0 0 5px rgba(74, 144, 226, 0.2);
+  }
+  to {
+    box-shadow: 0 0 20px rgba(74, 144, 226, 0.4);
+  }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .container-card {
+    padding: 25px;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+  }
+
+  .nav-tabs .nav-link {
+    padding: 8px 15px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Additional Animation for Form Inputs */
+.form-control:focus {
+  animation: pulse 1.5s infinite;
+}
+
+/* Show/Hide Animation for OTP Container */
+#otp-verification.show {
+  display: block !important;
+  animation: fadeInDown 0.5s forwards;
+}
+
+/* Form Groups Appear Animation */
+.tab-pane {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.tab-pane.show {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.1s;
+}
+
+/* Add some extra styles for the radio buttons */
+.form-check {
+  padding-left: 2em;
+  margin-bottom: 0.5rem;
+}
+
+.form-check-input {
+  cursor: pointer;
+}
+
+/* Add a subtle hover effect to the form rows */
+.row:hover {
+  background-color: rgba(74, 144, 226, 0.05);
+  border-radius: 6px;
+}
+
+/* Background elements */
+.auth-container::before {
+  content: "";
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  z-index: -1;
+  filter: blur(20px);
+}
+
+.auth-container::after {
+  content: "";
+  position: absolute;
+  bottom: -60px;
+  left: -60px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  z-index: -1;
+  filter: blur(25px);
+}
+
+/* Dashboard specific styles */
+
+/* Priority and status badges */
+.priority-high {
+  border-left: 4px solid var(--danger-color);
+}
+
+.priority-medium {
+  border-left: 4px solid #ffd43b;
+}
+
+.priority-low {
+  border-left: 4px solid var(--success-color);
+}
+
+.badge {
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.badge-new {
+  background-color: #7cb9f5;
+  color: #121a2b;
+}
+
+.badge-in-progress {
+  background-color: #ffd43b;
+  color: #121a2b;
+}
+
+.badge-resolved {
+  background-color: var(--success-color);
+  color: #121a2b;
+}
+
+.badge-closed {
+  background-color: var(--text-muted);
+  color: #e6e9f0;
+}
+
+/* Modal styles */
+.modal-content {
+  background-color: var(--secondary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-title {
+  color: var(--text-primary);
+}
+
+.modal-footer {
+  border-top: 1px solid var(--border-color);
+}
+
+/* Table styles */
+.table {
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+.table-light {
+  background-color: var(--card-bg);
+  color: var(--text-primary);
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(74, 144, 226, 0.1);
+}
+
+/* Form select styles */
+.form-select {
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.form-select:focus {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 0.25rem rgba(74, 144, 226, 0.25);
+}
+
+/* Button styles for incident actions */
+.btn-outline-primary {
+  color: var(--accent-blue);
+  border-color: var(--accent-blue);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--accent-blue);
+  color: #ffffff;
+}
+
+.btn-outline-secondary {
+  color: var(--text-secondary);
+  border-color: var(--text-secondary);
+}
+
+.btn-outline-secondary:hover {
+  background-color: var(--text-secondary);
+  color: var(--primary-bg);
+}
+
+.btn-outline-danger {
+  color: var(--danger-color);
+  border-color: var(--danger-color);
+}
+
+.btn-outline-danger:hover {
+  background-color: var(--danger-color);
+  color: #ffffff;
+}
+
+/* Footer styling */
+.dashboard-footer {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Animation for newly added incidents */
+@keyframes highlightNew {
+  0% {
+    background-color: rgba(74, 144, 226, 0.2);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+tr.new-incident {
+  animation: highlightNew 2s ease-out;
 }

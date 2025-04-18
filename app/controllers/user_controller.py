@@ -5,6 +5,7 @@ from app.models.catalog_models import Estado, Prioridad, Categoria
 from app.utils.aes_encryption import decrypt
 from datetime import datetime
 from app.models import db  # Importa el SQLAlchemy db
+from sqlalchemy import text
 
 class UserController:
     @staticmethod
@@ -156,8 +157,8 @@ class UserController:
         if not usuario:
             return redirect(url_for('auth.index'))
 
-        # Consulta SQL directa (más control, pero menos ORM)
-        query = """
+        # Wrap the SQL query with text()
+        query = text("""
             SELECT 
                 i.*,
                 e.nombre AS estado_nombre,
@@ -171,28 +172,29 @@ class UserController:
             JOIN categorias c ON i.categoria_id = c.id
             JOIN usuarios u ON i.usuario_creador_id = u.id
             WHERE i.id = :incident_id
-        """
+        """)
+
         incidencia = db.session.execute(query, {'incident_id': incident_id}).fetchone()
 
         if not incidencia or incidencia.usuario_creador_id != usuario.id:
             flash('No tienes permiso para ver esta incidencia', 'error')
             return redirect(url_for('user.dashboard'))
 
-        # Obtener comentarios
+        # Obtener comentarios (wrapped with text())
         comentarios = db.session.execute(
-            """
+            text("""
             SELECT co.*, us.nombre AS usuario_nombre, us.apellido AS usuario_apellido
             FROM comentarios co
             JOIN usuarios us ON co.usuario_id = us.id
             WHERE co.incidencia_id = :incident_id
             ORDER BY co.fecha_creacion ASC
-            """,
+            """),
             {'incident_id': incident_id}
         ).fetchall()
 
-        # Obtener historial
+        # Obtener historial (wrapped with text())
         historial = db.session.execute(
-            """
+            text("""
             SELECT h.*, 
                 ea.nombre AS estado_anterior_nombre,
                 en.nombre AS estado_nuevo_nombre,
@@ -204,7 +206,7 @@ class UserController:
             JOIN usuarios us ON h.usuario_id = us.id
             WHERE h.incidencia_id = :incident_id
             ORDER BY h.fecha_cambio DESC
-            """,
+            """),
             {'incident_id': incident_id}
         ).fetchall()
 
