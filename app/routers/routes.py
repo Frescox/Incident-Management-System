@@ -27,6 +27,13 @@ agent_bp.route('/dashboard', methods=['GET'])(AgentController.dashboard)
 agent_bp.route('/incidents', methods=['GET'])(AgentController.list_incidents)
 agent_bp.route('/incidents/<int:incident_id>', methods=['GET'])(AgentController.view_incident)
 agent_bp.route('/incidents/<int:incident_id>/status', methods=['POST'])(AgentController.change_status)
+agent_bp.route('/incidents/list')(AgentController.list_incidents)
+agent_bp.route('/incidents/view/<int:incident_id>')(AgentController.view_incident)
+agent_bp.route('/incidents/update/<int:incident_id>', methods=['POST'])(AgentController.update_incident)
+agent_bp.route('/incidents/assign/<int:incident_id>', methods=['POST'])(AgentController.assign_incident)
+agent_bp.route('/incidents/change-status/<int:incident_id>', methods=['POST'])(AgentController.change_status)
+agent_bp.route('/incidents/resolve/<int:incident_id>', methods=['POST'])(AgentController.resolve_incident)
+
 
 def init_routes(app):
     app.register_blueprint(auth_bp)
