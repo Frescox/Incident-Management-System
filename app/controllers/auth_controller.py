@@ -1,213 +1,251 @@
-from flask import request, render_template, redirect, url_for, session, flash, jsonify
+from flask import request, jsonify, session, redirect, url_for, render_template
 from app.models.user import Usuario
-from app.models.ticket_models import Incidencia, Comentario, HistorialEstado
-from app.models.catalog_models import Estado, Prioridad, Categoria
 from app.services.mail_service import send_email
 from app.services.sms_service import send_sms
 from app.utils.aes_encryption import encrypt, decrypt
+from app.db.database import db
 
 class AuthController:
     @staticmethod
     def index():
+        """Renderiza la página principal de autenticación"""
         return render_template('index.html')
-    
 
-    # Funcion para registrar un nuevo usuario
     @staticmethod
     def register():
         if request.method == 'POST':
             try:
-                nombre = request.form.get('nombre')
-                apellido = request.form.get('apellido')
-                email = request.form.get('email')
-                password = request.form.get('password')
-                telefono = request.form.get('telefono')
-                metodo_verificacion = request.form.get('metodo_verificacion')
+                data = request.get_json() if request.is_json else request.form
+                nombre = data.get('nombre')
+                apellido = data.get('apellido')
+                email = data.get('email')
+                password = data.get('password')
+                telefono = data.get('telefono')
+                metodo_verificacion = data.get('metodo_verificacion')
 
                 if not all([nombre, apellido, email, password, metodo_verificacion]):
-                    return jsonify({
-                        'success': False,
-                        'message': 'Todos los campos son obligatorios'
-                    })
+                    return jsonify({'success': False, 'message': 'Todos los campos son obligatorios'}), 400
 
-                if metodo_verificacion == 'sms' and not telefono:
-                    return jsonify({
-                        'success': False,
-                        'message': 'El número de teléfono es requerido para verificación por SMS'
-                    })
+                # Buscar usuario por email (incluyendo desactivados)
+                conn = db.get_connection()
+                cursor = conn.cursor(dictionary=True)
+                cursor.execute("SELECT email FROM usuarios")
+                existing_users = cursor.fetchall()
+                cursor.close()
+                conn.close()
 
-                usuario_existente = Usuario.find_by_email(email)
-                if usuario_existente:
-                    return jsonify({
-                        'success': False,
-                        'message': 'El correo electrónico ya está registrado'
-                    })
+                # Verificar si el email ya existe
+                for user in existing_users:
+                    try:
+                        if decrypt(user['email']) == email:
+                            return jsonify({'success': False, 'message': 'El correo ya está registrado'}), 400
+                    except:
+                        continue
 
-                nombre_encriptado = encrypt(nombre)
-                apellido_encriptado = encrypt(apellido)
-                email_encriptado = encrypt(email)
-                password_encriptado = encrypt(password)
-                telefono_encriptado = encrypt(telefono) if telefono else None
-
+                # Crear nuevo usuario
                 nuevo_usuario = Usuario(
-                    nombre=nombre_encriptado,
-                    apellido=apellido_encriptado,
-                    email=email_encriptado,
-                    password=password_encriptado,
-                    telefono=telefono_encriptado,
+                    nombre=encrypt(nombre),
+                    apellido=encrypt(apellido),
+                    email=encrypt(email),
+                    password=encrypt(password),
+                    telefono=encrypt(telefono) if telefono else None,
                     metodo_verificacion=metodo_verificacion,
+                    estado=True,
                     verificado=False
                 )
 
+                # Generar y enviar OTP
                 otp = nuevo_usuario.generate_otp()
-
                 if metodo_verificacion == 'email':
-                    subject = 'Verificación de cuenta - Sistema de Gestión de Incidencias'
-                    body = f'Tu código de verificación es: {otp}. Es válido por 15 minutos.'
-                    send_email(email, subject, body)
-                elif metodo_verificacion == 'sms':
-                    message = f'Tu código de verificación para el Sistema de Gestión de Incidencias es: {otp}'
-                    send_sms(telefono, message)
+                    send_email(email, 'Código de verificación', f'Tu código es: {otp}')
+                elif metodo_verificacion == 'sms' and telefono:
+                    send_sms(telefono, f'Tu código de verificación: {otp}')
 
                 nuevo_usuario.save()
                 session['user_email'] = email
 
                 return jsonify({
                     'success': True,
-                    'message': f'Te hemos enviado un código de verificación a tu {metodo_verificacion}',
+                    'message': f'Código enviado a tu {metodo_verificacion}',
                     'show_otp_verification': True
-                })
+                }), 200
 
             except Exception as e:
-                return jsonify({'success': False, 'message': str(e)})
+                return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
 
-        return jsonify({'success': False, 'message': 'Método no permitido'})
-    
+        return jsonify({'success': False, 'message': 'Método no permitido'}), 405
 
-    # Funcion para verificar el codigo enviado por el metodo de autentificacion elegido
     @staticmethod
     def verify_otp():
         if request.method == 'POST':
             try:
+                data = request.get_json() if request.is_json else request.form
                 email = session.get('user_email')
-                otp = request.form.get('otp')
+                otp = data.get('otp')
 
                 if not email or not otp:
-                    return jsonify({
-                        'success': False,
-                        'message': 'Información incompleta'
-                    })
+                    return jsonify({'success': False, 'message': 'Datos incompletos'}), 400
 
-                usuario = Usuario.find_by_email(email)
-                if not usuario:
-                    return jsonify({
-                        'success': False,
-                        'message': 'Usuario No Encontrado'
-                    })
+                # Buscar usuario
+                conn = db.get_connection()
+                cursor = conn.cursor(dictionary=True)
+                cursor.execute("SELECT * FROM usuarios WHERE email = %s", (encrypt(email),))
+                user_data = cursor.fetchone()
+                cursor.close()
+                conn.close()
+
+                if not user_data:
+                    return jsonify({'success': False, 'message': 'Usuario no encontrado'}), 404
+
+                usuario = Usuario(
+                    id=user_data['id'],
+                    nombre=user_data['nombre'],
+                    apellido=user_data['apellido'],
+                    email=user_data['email'],
+                    password=user_data['password'],
+                    rol_id=user_data['rol_id'],
+                    estado=user_data['estado'],
+                    otp=user_data.get('otp'),
+                    otp_expira=user_data.get('otp_expira'),
+                    verificado=user_data.get('verificado', False)
+                )
 
                 if usuario.verify_otp(otp):
                     session['user_id'] = usuario.id
-                    session['user_email'] = email
                     session['user_role'] = usuario.rol_id
 
-                    if session['user_role'] == 1:
-                        redirect_endpoint = 'auth.index'
-                    elif session['user_role'] == 2:
-                        redirect_endpoint = 'auth.index'
-                    elif session['user_role'] == 3:
-                        redirect_endpoint = 'auth.index'
-                    else:
-                        return jsonify({'success': False, 'message': 'Rol desconocido'})
+                    redirect_url = {
+                        1: 'admin.dashboard',
+                        2: 'agent.dashboard',
+                        3: 'user.dashboard'
+                    }.get(usuario.rol_id, 'auth.index')
 
                     return jsonify({
                         'success': True,
-                        'message': 'Verificación exitosa, redirigiendo...',
-                        'redirect': url_for(redirect_endpoint)
-                    })
+                        'redirect': url_for(redirect_url)
+                    }), 200
                 else:
                     return jsonify({
                         'success': False,
                         'message': 'Código inválido o expirado'
-                    })
+                    }), 400
 
             except Exception as e:
-                return jsonify({'success': False, 'message': str(e)})
+                return jsonify({'success': False, 'message': str(e)}), 500
 
-        return jsonify({'success': False, 'message': 'Método no permitido'})
+        return jsonify({'success': False, 'message': 'Método no permitido'}), 405
 
-    # Funcion para iniciar sesion
     @staticmethod
     def login():
         if request.method == 'POST':
             try:
-                email = request.form.get('email')
-                password = request.form.get('password')
+                data = request.get_json() if request.is_json else request.form
+                email = data.get('email')
+                password = data.get('password')
 
                 if not all([email, password]):
                     return jsonify({
                         'success': False,
-                        'message': 'Email y contraseña son requeridos'
-                    })
+                        'message': 'Email y contraseña requeridos'
+                    }), 400
 
-                usuario = Usuario.find_by_email(email)
-                if not usuario:
+                # Obtener todos los usuarios
+                conn = db.get_connection()
+                cursor = conn.cursor(dictionary=True)
+                cursor.execute("SELECT * FROM usuarios")
+                users = cursor.fetchall()
+                cursor.close()
+                conn.close()
+
+                # Buscar usuario por email
+                usuario_encontrado = None
+                for user in users:
+                    try:
+                        if decrypt(user['email']) == email:
+                            usuario_encontrado = user
+                            break
+                    except:
+                        continue
+
+                if not usuario_encontrado:
                     return jsonify({
                         'success': False,
                         'message': 'Credenciales inválidas'
-                    })
+                    }), 401
 
-                password_desencriptado = decrypt(usuario.password)
-                if password != password_desencriptado:
+                # Verificar estado
+                if not usuario_encontrado['estado']:
                     return jsonify({
                         'success': False,
-                        'message': 'Credenciales inválidas'
-                    })
+                        'message': 'Cuenta desactivada. Contacta al administrador.'
+                    }), 403
 
+                # Verificar contraseña
+                try:
+                    if password != decrypt(usuario_encontrado['password']):
+                        return jsonify({
+                            'success': False,
+                            'message': 'Credenciales inválidas'
+                        }), 401
+                except:
+                    return jsonify({
+                        'success': False,
+                        'message': 'Error procesando tu contraseña'
+                    }), 500
+
+                # Crear objeto usuario
+                usuario = Usuario(
+                    id=usuario_encontrado['id'],
+                    nombre=usuario_encontrado['nombre'],
+                    apellido=usuario_encontrado['apellido'],
+                    email=usuario_encontrado['email'],
+                    password=usuario_encontrado['password'],
+                    rol_id=usuario_encontrado['rol_id'],
+                    estado=usuario_encontrado['estado'],
+                    verificado=usuario_encontrado.get('verificado', False),
+                    metodo_verificacion=usuario_encontrado.get('metodo_verificacion')
+                )
+
+                # Verificación OTP si es necesario
                 if not usuario.verificado:
                     otp = usuario.generate_otp()
-
                     if usuario.metodo_verificacion == 'email':
-                        subject = 'Verificación de cuenta - Sistema de Gestión de Incidencias'
-                        body = f'Tu código de verificación es: {otp}. Es válido por 15 minutos.'
-                        send_email(email, subject, body)
-                    elif usuario.metodo_verificacion == 'sms':
-                        telefono_desencriptado = decrypt(usuario.telefono) if usuario.telefono else None
-                        print(f"Usuario.telefono: {usuario.telefono}")
-                        send_sms(telefono_desencriptado, f'Tu código de verificación para el Sistema de Gestión de Incidencias es: {otp}')
+                        send_email(email, 'Verificación', f'Tu código: {otp}')
+                    elif usuario.metodo_verificacion == 'sms' and usuario.telefono:
+                        send_sms(decrypt(usuario.telefono), f'Código: {otp}')
 
                     session['user_email'] = email
-
                     return jsonify({
                         'success': True,
-                        'message': f'Tu cuenta aún no está verificada. Te hemos enviado un nuevo código a tu {usuario.metodo_verificacion}',
+                        'message': 'Verificación requerida',
                         'show_otp_verification': True
-                    })
+                    }), 200
 
+                # Login exitoso
                 session['user_id'] = usuario.id
                 session['user_email'] = email
                 session['user_role'] = usuario.rol_id
-
-                if session['user_role'] == 1:
-                    redirect_endpoint = 'admin.dashboard'
-                elif session['user_role'] == 2:
-                    redirect_endpoint = 'agent.dashboard'
-                elif session['user_role'] == 3:
-                    redirect_endpoint = 'user.dashboard'
-                else:
-                    return jsonify({'success': False, 'message': 'Rol desconocido'})
-
                 usuario.update_login_timestamp()
+
+                redirect_url = {
+                    1: 'admin.dashboard',
+                    2: 'agent.dashboard',
+                    3: 'user.dashboard'
+                }.get(usuario.rol_id, 'auth.index')
 
                 return jsonify({
                     'success': True,
                     'message': 'Inicio de sesión exitoso',
-                    'redirect': url_for(redirect_endpoint)
-                })
+                    'redirect': url_for(redirect_url)
+                }), 200
 
             except Exception as e:
-                return jsonify({'success': False, 'message': str(e)})
+                return jsonify({
+                    'success': False,
+                    'message': f'Error en el servidor: {str(e)}'
+                }), 500
 
-        return jsonify({'success': False, 'message': 'Método no permitido'})
+        return jsonify({'success': False, 'message': 'Método no permitido'}), 405
 
     @staticmethod
     def logout():
