@@ -3,148 +3,633 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control del Agente</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <title>Dashboard de Agente - Sistema de Incidencias</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --theme-primary: #2563eb;
+            --theme-success: #10b981;
+            --theme-warning: #f59e0b;
+            --theme-danger: #ef4444;
+            --theme-secondary: #6b7280;
+            --theme-light: #f3f4f6;
+            --theme-dark: #1f2937;
+            --transition-speed: 0.3s;
+        }
+
         body {
-            background-color: #f8f9fa;
+            background-color: #f8fafc;
+            padding-top: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #334155;
         }
-        .dashboard-container {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
         }
-        .user-info {
-            background-color: #f1f8ff;
+
+        .dashboard-header h1 {
+            font-weight: 700;
+            font-size: 1.8rem;
+            color: var(--theme-dark);
+        }
+
+        .dashboard-header p {
+            font-size: 1rem;
+            color: var(--theme-secondary);
+            margin-bottom: 0;
+        }
+
+        .section-container {
+            background-color: white;
+            border-radius: 12px;
             padding: 20px;
-            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            color: var(--theme-dark);
+        }
+
+        .section-title i {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        .section-title .badge {
+            margin-left: 10px;
+            padding: 5px 10px;
+            font-size: 0.8em;
+            border-radius: 30px;
+        }
+
+        .card {
+            border: none;
             margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: all var(--transition-speed);
+            border-radius: 10px;
+            overflow: hidden;
         }
-        .badge-new {
-            background-color: #0d6efd;
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
         }
-        .badge-in-progress {
-            background-color: #fd7e14;
+
+        .card-header {
+            font-weight: 600;
+            padding: 12px 15px;
         }
-        .badge-resolved {
-            background-color: #198754;
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--theme-dark);
+            margin-bottom: 10px;
         }
-        .badge-closed {
-            background-color: #6c757d;
+
+        .card-text {
+            font-size: 0.95rem;
+            color: #4b5563;
+            margin-bottom: 15px;
         }
-        .priority-high {
-            border-left: 4px solid #dc3545;
+
+        .card-footer {
+            background-color: rgba(0, 0, 0, 0.02);
+            font-size: 0.85rem;
         }
-        .priority-medium {
-            border-left: 4px solid #ffc107;
+
+        .badge {
+            font-weight: 500;
+            padding: 6px 10px;
         }
-        .priority-low {
-            border-left: 4px solid #0dcaf0;
+
+        .badge-nuevo {
+            background-color: var(--theme-warning);
+            color: #fff;
         }
-        .flashed-messages {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
+
+        .badge-en-progreso {
+            background-color: var(--theme-primary);
+            color: #fff;
+        }
+
+        .badge-resuelto {
+            background-color: var(--theme-success);
+            color: #fff;
+        }
+
+        .badge-cerrado {
+            background-color: var(--theme-secondary);
+            color: #fff;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .action-buttons .btn {
+            padding: 7px 12px;
+            font-size: 0.9rem;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .action-buttons .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .action-buttons .btn i {
+            margin-right: 5px;
+        }
+
+        .btn-primary {
+            background-color: var(--theme-primary);
+            border-color: var(--theme-primary);
+        }
+
+        .btn-success {
+            background-color: var(--theme-success);
+            border-color: var(--theme-success);
+        }
+
+        .btn-danger {
+            background-color: var(--theme-danger);
+            border-color: var(--theme-danger);
+        }
+
+        .btn-outline-danger {
+            color: var(--theme-danger);
+            border-color: var(--theme-danger);
+        }
+
+        .btn-outline-danger:hover {
+            background-color: var(--theme-danger);
+            color: white;
+        }
+
+        .empty-list {
+            text-align: center;
+            padding: 30px 20px;
+            background-color: var(--theme-light);
+            border-radius: 10px;
+            color: var(--theme-secondary);
+        }
+
+        .empty-list i {
+            color: #cbd5e1;
+            margin-bottom: 15px;
+        }
+
+        .empty-list p {
+            font-size: 1.1rem;
+            margin-bottom: 0;
+        }
+
+        .modal-content {
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            background-color: #f8fafc;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .modal-title {
+            font-weight: 700;
+            color: var(--theme-dark);
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #4b5563;
+        }
+
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            padding: 10px 15px;
+            font-size: 0.95rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--theme-primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        textarea.form-control {
+            min-height: 100px;
+        }
+
+        /* Estilos responsivos para dispositivos móviles */
+        @media (max-width: 767px) {
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .action-buttons {
+                justify-content: space-between;
+                width: 100%;
+            }
+            
+            .action-buttons .btn {
+                padding: 5px 10px;
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Animaciones */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        footer {
+            background-color: var(--theme-dark);
+            color: #e5e7eb;
+            padding: 15px 0;
+            font-size: 0.9rem;
+        }
+
+        /* Personalizaciones para el scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background-color: #f1f5f9;
         }
     </style>
 </head>
 <body>
-    <!-- Mensajes Flash -->
-    <div class="flashed-messages">
+    <div class="container">
+        <div class="dashboard-header">
+            <div>
+                <h1>Dashboard de Agente</h1>
+                <p>Bienvenido, {{ nombre }} {{ apellido }} ({{ correo }})</p>
+            </div>
+            <div>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+                </a>
+            </div>
+        </div>
+
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
-    </div>
 
-    <div class="dashboard-container">
-        <div class="user-info d-flex justify-content-between align-items-center">
-            <div>
-                <h2>Bienvenido, {{ nombre }} {{ apellido }}</h2>
-                <p class="mb-0">Correo: {{ correo }}</p>
-            </div>
-            <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">
-                <i class="bi bi-box-arrow-right"></i> Cerrar sesión
-            </a>
-        </div>
+        <!-- Sección de Nuevas Incidencias -->
+        <div class="section-container mb-5">
+            <h2 class="section-title">
+                <i class="fas fa-exclamation-circle text-warning"></i> 
+                Nuevas Incidencias
+                <span class="badge bg-warning">{{ nuevas|length }}</span>
+            </h2>
 
-        <h3 class="mb-4">Incidencias Asignadas</h3>
+            {% if nuevas %}
+                <div class="row">
+                    {% for incidencia in nuevas %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card">
+                                <div class="card-header bg-warning text-white d-flex justify-content-between align-items-center">
+                                    <span>ID: #{{ incidencia.id }}</span>
+                                    <span class="badge badge-nuevo">Nuevo</span>
+                                </div>
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ incidencia.titulo }}</h5>
+                                    <p class="card-text">{{ incidencia.descripcion|truncate(100) }}</p>
+                                    <div class="d-flex justify-content-between">
+                                        <small class="text-muted">Categoría: {{ incidencia.categoria.nombre }}</small>
+                                        <small class="text-muted">Prioridad: {{ incidencia.prioridad.nombre }}</small>
+                                    </div>
+                                    <hr>
+                                    <div class="action-buttons">
+                                        <a href="{{ url_for('agent.view_incident', incident_id=incidencia.id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#changeStatusModal{{ incidencia.id }}">
+                                            <i class="fas fa-edit"></i> Cambiar Estado
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-footer text-muted">
+                                    Creado: {{ incidencia.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
+                                </div>
+                            </div>
+                        </div>
 
-        {% if not incidencias %}
-        <div class="alert alert-info">
-            No tienes incidencias asignadas actualmente.
-        </div>
-        {% else %}
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead class="table-light">
-                    <tr>
-                        <th>ID</th>
-                        <th>Título</th>
-                        <th>Categoría</th>
-                        <th>Prioridad</th>
-                        <th>Estado</th>
-                        <th>Fecha de Creación</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for incidencia in incidencias %}
-                    <tr class="align-middle {% if incidencia.prioridad.nombre.lower() == 'alta' %}priority-high
-                                          {% elif incidencia.prioridad.nombre.lower() == 'media' %}priority-medium
-                                          {% else %}priority-low{% endif %}">
-                        <td>{{ incidencia.id }}</td>
-                        <td>{{ incidencia.titulo }}</td>
-                        <td>{{ incidencia.categoria.nombre }}</td>
-                        <td>{{ incidencia.prioridad.nombre|capitalize }}</td>
-                        <td>
-                            <span class="badge 
-                                {% if incidencia.estado.nombre.lower() == 'nuevo' %}badge-new
-                                {% elif incidencia.estado.nombre.lower() == 'en progreso' %}badge-in-progress
-                                {% elif incidencia.estado.nombre.lower() == 'resuelto' %}badge-resolved
-                                {% else %}badge-closed{% endif %}">
-                                {{ incidencia.estado.nombre|title }}
-                            </span>
-                        </td>
-                        <td>{{ incidencia.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</td>
-                        <td>
-                            <a href="{{ url_for('agent.view_incident', incident_id=incidencia.id) }}" 
-                               class="btn btn-sm btn-outline-primary" title="Ver">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                        </td>
-                    </tr>
+                        <!-- Modal para cambiar estado -->
+                        <div class="modal fade" id="changeStatusModal{{ incidencia.id }}" tabindex="-1" aria-labelledby="changeStatusModalLabel{{ incidencia.id }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="changeStatusModalLabel{{ incidencia.id }}">Cambiar Estado - Incidencia #{{ incidencia.id }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <form action="{{ url_for('agent.change_status', incident_id=incidencia.id) }}" method="POST">
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label for="estado_id" class="form-label">Nuevo Estado</label>
+                                                <select class="form-select" name="estado_id" id="estado_id" required>
+                                                    {% for estado in estados %}
+                                                        <option value="{{ estado.id }}" {% if estado.id == incidencia.estado_id %}selected{% endif %}>
+                                                            {{ estado.nombre|capitalize }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="comentario" class="form-label">Comentario</label>
+                                                <textarea class="form-control" name="comentario" id="comentario" rows="3" placeholder="Añade un comentario explicando el cambio de estado..."></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                     {% endfor %}
-                </tbody>
-            </table>
+                </div>
+            {% else %}
+                <div class="empty-list">
+                    <i class="fas fa-check-circle fa-3x mb-3"></i>
+                    <p>No hay nuevas incidencias pendientes.</p>
+                </div>
+            {% endif %}
         </div>
-        {% endif %}
+
+        <!-- Sección de Incidencias En Progreso -->
+        <div class="section-container mb-5">
+            <h2 class="section-title">
+                <i class="fas fa-spinner text-primary"></i> 
+                Incidencias En Progreso
+                <span class="badge bg-primary">{{ en_progreso|length }}</span>
+            </h2>
+
+            {% if en_progreso %}
+                <div class="row">
+                    {% for incidencia in en_progreso %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card">
+                                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                    <span>ID: #{{ incidencia.id }}</span>
+                                    <span class="badge badge-en-progreso">En Progreso</span>
+                                </div>
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ incidencia.titulo }}</h5>
+                                    <p class="card-text">{{ incidencia.descripcion|truncate(100) }}</p>
+                                    <div class="d-flex justify-content-between">
+                                        <small class="text-muted">Categoría: {{ incidencia.categoria.nombre }}</small>
+                                        <small class="text-muted">Prioridad: {{ incidencia.prioridad.nombre }}</small>
+                                    </div>
+                                    <hr>
+                                    <div class="action-buttons">
+                                        <a href="{{ url_for('agent.view_incident', incident_id=incidencia.id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#changeStatusModal{{ incidencia.id }}">
+                                            <i class="fas fa-edit"></i> Cambiar Estado
+                                        </button>
+                                        <form action="{{ url_for('agent.resolve_incident', incident_id=incidencia.id) }}" method="POST" style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-success">
+                                                <i class="fas fa-check-circle"></i> Resolver
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                                <div class="card-footer text-muted">
+                                    Actualizado: {{ incidencia.fecha_ultima_actualizacion.strftime('%d/%m/%Y %H:%M') }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Modal para cambiar estado -->
+                        <div class="modal fade" id="changeStatusModal{{ incidencia.id }}" tabindex="-1" aria-labelledby="changeStatusModalLabel{{ incidencia.id }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="changeStatusModalLabel{{ incidencia.id }}">Cambiar Estado - Incidencia #{{ incidencia.id }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <form action="{{ url_for('agent.change_status', incident_id=incidencia.id) }}" method="POST">
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label for="estado_id" class="form-label">Nuevo Estado</label>
+                                                <select class="form-select" name="estado_id" id="estado_id" required>
+                                                    {% for estado in estados %}
+                                                        <option value="{{ estado.id }}" {% if estado.id == incidencia.estado_id %}selected{% endif %}>
+                                                            {{ estado.nombre|capitalize }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="comentario" class="form-label">Comentario</label>
+                                                <textarea class="form-control" name="comentario" id="comentario" rows="3" placeholder="Añade un comentario explicando el cambio de estado..."></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-list">
+                    <i class="fas fa-check-circle fa-3x mb-3"></i>
+                    <p>No hay incidencias en progreso.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Sección de Incidencias Resueltas -->
+        <div class="section-container mb-5">
+            <h2 class="section-title">
+                <i class="fas fa-check-circle text-success"></i> 
+                Incidencias Resueltas
+                <span class="badge bg-success">{{ resueltas|length }}</span>
+            </h2>
+
+            {% if resueltas %}
+                <div class="row">
+                    {% for incidencia in resueltas %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card">
+                                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                    <span>ID: #{{ incidencia.id }}</span>
+                                    <span class="badge badge-resuelto">Resuelto</span>
+                                </div>
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ incidencia.titulo }}</h5>
+                                    <p class="card-text">{{ incidencia.descripcion|truncate(100) }}</p>
+                                    <div class="d-flex justify-content-between">
+                                        <small class="text-muted">Categoría: {{ incidencia.categoria.nombre }}</small>
+                                        <small class="text-muted">Prioridad: {{ incidencia.prioridad.nombre }}</small>
+                                    </div>
+                                    <hr>
+                                    <div class="action-buttons">
+                                        <a href="{{ url_for('agent.view_incident', incident_id=incidencia.id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#changeStatusModal{{ incidencia.id }}">
+                                            <i class="fas fa-edit"></i> Cambiar Estado
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-footer text-muted">
+                                    Resuelto: {{ incidencia.fecha_resolucion.strftime('%d/%m/%Y %H:%M') if incidencia.fecha_resolucion else 'N/A' }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Modal para cambiar estado -->
+                        <div class="modal fade" id="changeStatusModal{{ incidencia.id }}" tabindex="-1" aria-labelledby="changeStatusModalLabel{{ incidencia.id }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="changeStatusModalLabel{{ incidencia.id }}">Cambiar Estado - Incidencia #{{ incidencia.id }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <form action="{{ url_for('agent.change_status', incident_id=incidencia.id) }}" method="POST">
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label for="estado_id" class="form-label">Nuevo Estado</label>
+                                                <select class="form-select" name="estado_id" id="estado_id" required>
+                                                    {% for estado in estados %}
+                                                        <option value="{{ estado.id }}" {% if estado.id == incidencia.estado_id %}selected{% endif %}>
+                                                            {{ estado.nombre|capitalize }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="comentario" class="form-label">Comentario</label>
+                                                <textarea class="form-control" name="comentario" id="comentario" rows="3" placeholder="Añade un comentario explicando el cambio de estado..."></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-list">
+                    <i class="fas fa-info-circle fa-3x mb-3"></i>
+                    <p>No hay incidencias resueltas recientemente.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Sección de Incidencias Cerradas -->
+        <div class="section-container mb-5">
+            <h2 class="section-title">
+                <i class="fas fa-archive text-secondary"></i> 
+                Incidencias Cerradas
+                <span class="badge bg-secondary">{{ cerradas|length }}</span>
+            </h2>
+
+            {% if cerradas %}
+                <div class="row">
+                    {% for incidencia in cerradas %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card">
+                                <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                                    <span>ID: #{{ incidencia.id }}</span>
+                                    <span class="badge badge-cerrado">Cerrado</span>
+                                </div>
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ incidencia.titulo }}</h5>
+                                    <p class="card-text">{{ incidencia.descripcion|truncate(100) }}</p>
+                                    <div class="d-flex justify-content-between">
+                                        <small class="text-muted">Categoría: {{ incidencia.categoria.nombre }}</small>
+                                        <small class="text-muted">Prioridad: {{ incidencia.prioridad.nombre }}</small>
+                                    </div>
+                                    <hr>
+                                    <div class="action-buttons">
+                                        <a href="{{ url_for('agent.view_incident', incident_id=incidencia.id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="card-footer text-muted">
+                                    Cerrado: {{ incidencia.fecha_cierre.strftime('%d/%m/%Y %H:%M') if incidencia.fecha_cierre else 'N/A' }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-list">
+                    <i class="fas fa-info-circle fa-3x mb-3"></i>
+                    <p>No hay incidencias cerradas recientemente.</p>
+                </div>
+            {% endif %}
+        </div>
     </div>
 
-    <!-- Bootstrap JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <footer class="bg-dark text-white text-center py-3 mt-5">
+        <div class="container">
+            <p class="mb-0">&copy; 2025 Sistema de Gestión de Incidencias</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Cerrar automáticamente los mensajes flash después de 5 segundos
-        setTimeout(() => {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(alert => {
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
+        // Script para manejar la animación de las tarjetas con un ligero retraso
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
             });
-        }, 5000);
+        });
     </script>
-</body>
+    </body>
 </html>
