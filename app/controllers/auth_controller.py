@@ -188,7 +188,7 @@ class AuthController:
                 session['user_role'] = usuario.rol_id
 
                 if session['user_role'] == 1:
-                    redirect_endpoint = 'agent.dashboard'
+                    redirect_endpoint = 'admin.dashboard'
                 elif session['user_role'] == 2:
                     redirect_endpoint = 'agent.dashboard'
                 elif session['user_role'] == 3:
