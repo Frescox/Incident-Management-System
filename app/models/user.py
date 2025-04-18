@@ -1,5 +1,5 @@
 from app.db.database import db
-from datetime import datetime
+from app.utils.aes_encryption import decrypt
 import hashlib
 import os
 import time
@@ -22,8 +22,7 @@ class Usuario:
         self.otp = otp
         self.otp_expira = otp_expira
         self.verificado = verificado
-        self.created_at = datetime.now()
-        self.updated_at = datetime.now()
+
 
     def save(self):
         conn = db.get_connection()
@@ -67,7 +66,7 @@ class Usuario:
             return None
         cursor = conn.cursor(dictionary=True)
         
-        query = "SELECT * FROM usuarios"
+        query = "SELECT * FROM usuarios WHERE estado = 1"  # Solo usuarios activos
         cursor.execute(query)
         
         for result in cursor.fetchall():
@@ -101,6 +100,81 @@ class Usuario:
         cursor.close()
         conn.close()
         return None
+
+    @staticmethod
+    def find_by_id(user_id):
+        conn = db.get_connection()
+        if not conn:
+            return None
+        cursor = conn.cursor(dictionary=True)
+        
+        query = "SELECT * FROM usuarios WHERE id = %s"
+        cursor.execute(query, (user_id,))
+        result = cursor.fetchone()
+        
+        if result:
+            usuario = Usuario(
+                id=result['id'],
+                nombre=result['nombre'],
+                apellido=result['apellido'],
+                email=result['email'], 
+                password=result['password'],
+                rol_id=result['rol_id'],
+                estado=result['estado'],
+                telefono=result['telefono'],
+                metodo_verificacion=result.get('metodo_verificacion'),
+                otp=result.get('otp'),
+                otp_expira=result.get('otp_expira'),
+                verificado=result.get('verificado', False)
+            )
+            usuario.ultimo_login = result.get('ultimo_login')
+            usuario.created_at = result.get('created_at')
+            usuario.updated_at = result.get('updated_at')
+            cursor.close()
+            conn.close()
+            return usuario
+        
+        cursor.close()
+        conn.close()
+        return None
+
+    @staticmethod
+    def get_all_users():
+        conn = db.get_connection()
+        if not conn:
+            return []
+        cursor = conn.cursor(dictionary=True)
+        
+        query = """
+        SELECT u.id, u.nombre, u.apellido, u.email, u.estado, 
+               r.nombre AS rol_nombre, r.id AS rol_id
+        FROM usuarios u
+        JOIN roles r ON u.rol_id = r.id
+        ORDER BY u.id
+        """
+        cursor.execute(query)
+        results = cursor.fetchall()
+        
+        usuarios = []
+        for result in results:
+            try:
+                usuario = {
+                    'id': result['id'],
+                    'nombre': decrypt(result['nombre']) if result['nombre'] else "",
+                    'apellido': decrypt(result['apellido']) if result['apellido'] else "",
+                    'email': decrypt(result['email']) if result['email'] else "",
+                    'estado': result['estado'],
+                    'rol_nombre': result['rol_nombre'],
+                    'rol_id': result['rol_id']
+                }
+                usuarios.append(usuario)
+            except Exception as e:
+                print(f"Error decrypting user data: {e}")
+                continue
+        
+        cursor.close()
+        conn.close()
+        return usuarios
 
     def verify_password(self, password):
         if not self.password:

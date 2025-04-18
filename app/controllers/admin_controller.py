@@ -1,4 +1,4 @@
-from flask import render_template, session, redirect, url_for, flash
+from flask import render_template, session, redirect, url_for, flash, request
 from app.models.ticket_models import Incidencia
 from app.models.catalog_models import Estado, Prioridad, Categoria
 from app.models import db
@@ -26,6 +26,7 @@ class AdminController:
         apellido = decrypt(usuario.apellido)
         correo = session.get('user_email')
 
+        # Obtener todas las incidencias
         resultados_raw = db.session.execute(text("""
             SELECT i.id, i.titulo, i.descripcion, i.fecha_creacion,
                    e.nombre AS estado_nombre,
@@ -53,11 +54,33 @@ class AdminController:
             incidencia["agente_apellido"] = safe_decrypt(agente_apellido) if agente_apellido else ""
             incidencias.append(incidencia)
 
+        # Obtener todos los usuarios
+        usuarios_raw = db.session.execute(text("""
+            SELECT u.id, u.nombre, u.apellido, u.email, u.estado, 
+                   r.nombre AS rol_nombre, r.id AS rol_id
+            FROM usuarios u
+            JOIN roles r ON u.rol_id = r.id
+            ORDER BY u.id
+        """)).fetchall()
+
+        usuarios = []
+        for row in usuarios_raw:
+            usuario = dict(row._mapping)
+            usuario["nombre"] = safe_decrypt(usuario.get("nombre"))
+            usuario["apellido"] = safe_decrypt(usuario.get("apellido"))
+            usuario["email"] = safe_decrypt(usuario.get("email"))
+            usuarios.append(usuario)
+
+        # Obtener todos los roles disponibles
+        roles = db.session.execute(text("SELECT * FROM roles")).fetchall()
+
         return render_template('admin_dashboard.html',
-                               nombre=nombre,
-                               apellido=apellido,
-                               correo=correo,
-                               incidencias=incidencias)
+                           nombre=nombre,
+                           apellido=apellido,
+                           correo=correo,
+                           incidencias=incidencias,
+                           usuarios=usuarios,
+                           roles=roles)
 
     @staticmethod
     def view_incident(incident_id):
@@ -117,9 +140,77 @@ class AdminController:
         correo = session.get('user_email')
 
         return render_template('admin_view_incident.html',
-                               nombre=nombre,
-                               apellido=apellido,
-                               correo=correo,
-                               incidencia=incidencia,
-                               comentarios=comentarios,
-                               historial=historial)
+                           nombre=nombre,
+                           apellido=apellido,
+                           correo=correo,
+                           incidencia=incidencia,
+                           comentarios=comentarios,
+                           historial=historial)
+
+    @staticmethod
+    def update_user_role(user_id):
+        if 'user_email' not in session:
+            return redirect(url_for('auth.index'))
+
+        usuario = Usuario.find_by_email(session['user_email'])
+        if not usuario or usuario.rol_id != 1:
+            return redirect(url_for('auth.index'))
+
+        if request.method == 'POST':
+            nuevo_rol_id = request.form.get('rol_id')
+            
+            # Verificar que no se está modificando a sí mismo
+            if usuario.id == user_id:
+                flash('No puedes cambiar tu propio rol', 'error')
+                return redirect(url_for('admin.dashboard'))
+            
+            # Actualizar el rol del usuario
+            db.session.execute(text("""
+                UPDATE usuarios SET rol_id = :rol_id WHERE id = :user_id
+            """), {'rol_id': nuevo_rol_id, 'user_id': user_id})
+            
+            try:
+                db.session.commit()
+                flash('Rol actualizado correctamente', 'success')
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Error al actualizar el rol: {str(e)}', 'error')
+
+        return redirect(url_for('admin.dashboard'))
+
+    @staticmethod
+    def toggle_user_status(user_id):
+        if 'user_email' not in session:
+            return redirect(url_for('auth.index'))
+
+        usuario = Usuario.find_by_email(session['user_email'])
+        if not usuario or usuario.rol_id != 1:
+            return redirect(url_for('auth.index'))
+
+        # Verificar que no se está desactivando a sí mismo
+        if usuario.id == user_id:
+            flash('No puedes cambiar tu propio estado', 'error')
+            return redirect(url_for('admin.dashboard'))
+
+        # Obtener el usuario a modificar
+        user_to_toggle = Usuario.find_by_id(user_id)
+        if not user_to_toggle:
+            flash('Usuario no encontrado', 'error')
+            return redirect(url_for('admin.dashboard'))
+
+        # Cambiar el estado del usuario (toggle)
+        new_status = not user_to_toggle.estado
+        
+        try:
+            db.session.execute(text("""
+                UPDATE usuarios SET estado = :estado WHERE id = :user_id
+            """), {'estado': new_status, 'user_id': user_id})
+            db.session.commit()
+            
+            status_msg = "desactivado" if not new_status else "activado"
+            flash(f'Usuario {status_msg} correctamente', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al actualizar estado: {str(e)}', 'error')
+
+        return redirect(url_for('admin.dashboard'))
