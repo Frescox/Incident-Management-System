@@ -3,6 +3,7 @@ from app.controllers.auth_controller import AuthController
 from app.controllers.user_controller import UserController
 from app.controllers.agent_controller import AgentController
 from app.controllers.admin_controller import AdminController
+from app.controllers.admin_controller import AdminController
 
 auth_bp = Blueprint('auth', __name__)
 user_bp = Blueprint('user', __name__, url_prefix='/user')
@@ -41,9 +42,14 @@ admin_bp.route('/dashboard', methods=['GET'])(AdminController.dashboard)
 admin_bp.route('/incidents/<int:incident_id>', methods=['GET'])(AdminController.view_incident)
 admin_bp.route('/users/<int:user_id>/update_role', methods=['POST'])(AdminController.update_user_role)
 admin_bp.route('/users/<int:user_id>/toggle_status', methods=['POST'])(AdminController.toggle_user_status)
+admin_bp.route('/logs/incident/<int:incident_id>', methods=['GET'])(AdminController.logs_by_incident)
+admin_bp.route('/logs/user/<int:user_id>', methods=['GET'])(AdminController.logs_by_user)
+
+
 
 def init_routes(app):
     app.register_blueprint(auth_bp)
     app.register_blueprint(user_bp)
     app.register_blueprint(agent_bp)
     app.register_blueprint(admin_bp)
+

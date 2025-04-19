@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>{{ titulo }}</h2>
+  <hr>
+  <pre class="bg-light p-3" style="white-space: pre-wrap; font-family: monospace;">
+{% for log in logs %}
+[{{ log.created_at.strftime('%d/%m/%Y %H:%M:%S') }}] {{ log.nombre | default('Usuario') }} {{ log.apellido | default('') }} realizó acción '{{ log.accion }}' sobre {{ log.entidad }} #{{ log.entidad_id }}: {{ log.detalles }}
+{% endfor %}
+  </pre>
+</div>
+{% endblock %}

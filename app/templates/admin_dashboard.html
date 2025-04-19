@@ -146,10 +146,44 @@
                             <a href="{{ url_for('admin.view_incident', incident_id=i.id) }}" class="btn btn-sm btn-outline-primary" title="Ver">
                                 <i class="bi bi-eye"></i>
                             </a>
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalLogIncidencia{{ i.id }}"
+                                    title="Ver Logs de Incidencia">
+                                <i class="bi bi-clipboard-data"></i>
+                            </button>
                         </td>
+                        
+                        
                     </tr>
                     {% endfor %}
+                    
                 </tbody>
+                    {% for i in incidencias %}
+                    <div class="modal fade" id="modalLogIncidencia{{ i.id }}" tabindex="-1" aria-labelledby="modalLogIncidenciaLabel{{ i.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalLogIncidenciaLabel{{ i.id }}">
+                                Logs de la incidencia #{{ i.id }}: "{{ i.titulo }}"
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                        {% for log in i.logs %}
+                        <pre class="bg-light p-2 rounded small mb-2">
+                    [{{ log.created_at.strftime('%d/%m/%Y %H:%M:%S') }}] 
+                    {{ log.usuario_nombre }} realizó acción '{{ log.accion }}' sobre {{ log.entidad }} #{{ log.entidad_id }}:
+                    {{ log.detalles }}
+                        </pre>
+                        {% else %}
+                        <p class="text-muted">No hay logs disponibles para esta incidencia.</p>
+                        {% endfor %}
+                        </div>
+                    </div>
+                    </div>
+                    </div>
+                    {% endfor %}
             </table>
         </div>
         {% endif %}
@@ -207,11 +241,46 @@
                                             {% if usuario.estado %}Desactivar{% else %}Activar{% endif %}
                                         </button>
                                     </form>
+                                            <button type="button" class="btn btn-sm btn-dark"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalLogUsuario{{ usuario.id }}"
+                                            title="Ver Logs de Usuario">
+                                        <i class="bi bi-clock-history"></i>
+                                    </button>
+                            
                                 </div>
                             </td>
+                            
                         </tr>
                         {% endfor %}
                     </tbody>
+                    {% for usuario in usuarios %}
+                    <div class="modal fade" id="modalLogUsuario{{ usuario.id }}" tabindex="-1" aria-labelledby="modalLogUsuarioLabel{{ usuario.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                        <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalLogUsuarioLabel{{ usuario.id }}">
+                            Logs del usuario     {{ usuario.nombre }} {{ usuario.apellido }}
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            {% if usuario.logs %}
+                            {% for log in usuario.logs %}
+                            <pre class="bg-light p-2 rounded small mb-2">
+                            [{{ log.created_at.strftime('%d/%m/%Y %H:%M:%S') }}]
+                            {{ log.usuario_nombre }} realizó acción '{{ log.accion }}' sobre {{ log.entidad }} #{{ log.entidad_id }}:
+                            {{ log.detalles }}
+                            </pre>
+                            {% endfor %}
+                            {% else %}
+                            <p class="text-muted">No hay logs disponibles para este usuario.</p>
+                            {% endif %}
+                        </div>
+                        </div>
+                    </div>
+                    </div>
+                    {% endfor %}
                 </table>
             </div>
             {% endif %}

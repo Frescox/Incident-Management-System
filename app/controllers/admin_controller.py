@@ -3,8 +3,19 @@ from app.models.ticket_models import Incidencia, Comentario, HistorialEstado
 from app.models.catalog_models import Estado, Prioridad, Categoria
 from app.models import db
 from app.models.user import Usuario
-from app.utils.aes_encryption import decrypt
+from app.utils.aes_encryption import decrypt    
 from sqlalchemy import text
+
+def get_decrypted_user_name(user_id):
+    result = db.session.execute(text("SELECT nombre, apellido FROM usuarios WHERE id = :id"), {'id': user_id}).fetchone()
+    if result:
+        try:
+            nombre = decrypt(result.nombre)
+            apellido = decrypt(result.apellido)
+            return f"{nombre} {apellido}"
+        except Exception:
+            return f"Usuario {user_id}"
+    return f"Usuario {user_id}"
 
 def safe_decrypt(value):
     try:
@@ -52,8 +63,26 @@ class AdminController:
             agente_apellido = incidencia.get("agente_apellido")
             incidencia["agente_nombre"] = safe_decrypt(agente_nombre) if agente_nombre else "Sin agente"
             incidencia["agente_apellido"] = safe_decrypt(agente_apellido) if agente_apellido else ""
-            incidencias.append(incidencia)
 
+            # Obtener logs relacionados con esta incidencia
+            logs_raw = db.session.execute(text("""
+                SELECT * FROM log_actividad
+                WHERE entidad = 'incidencia' AND entidad_id = :incidencia_id
+                ORDER BY created_at DESC
+            """), {'incidencia_id': incidencia['id']}).fetchall()
+
+            # Convertir a lista de diccionarios
+            logs = []
+            for log in logs_raw:
+                log_dict = dict(log._mapping)
+                log_dict['usuario_nombre'] = get_decrypted_user_name(log_dict['usuario_id'])
+                logs.append(log_dict)
+
+
+            incidencia['logs'] = logs
+
+            incidencias.append(incidencia)
+            
         # Obtener todos los usuarios
         usuarios_raw = db.session.execute(text("""
             SELECT u.id, u.nombre, u.apellido, u.email, u.estado, 
@@ -69,7 +98,30 @@ class AdminController:
             usuario["nombre"] = safe_decrypt(usuario.get("nombre"))
             usuario["apellido"] = safe_decrypt(usuario.get("apellido"))
             usuario["email"] = safe_decrypt(usuario.get("email"))
+    
+             # Obtener logs para cada usuario individualmente
+            logs_raw = db.session.execute(text("""
+                SELECT la.*, u.nombre, u.apellido
+                FROM log_actividad la
+                JOIN usuarios u ON la.usuario_id = u.id
+                WHERE la.usuario_id = :user_id
+                ORDER BY la.created_at DESC
+            """), {'user_id': usuario['id']}).fetchall()
+
+            logs = []
+            for log in logs_raw:
+                logs.append({
+                    'usuario_nombre': f"{safe_decrypt(log.nombre)} {safe_decrypt(log.apellido)}",
+                    'accion': log.accion,
+                    'entidad': log.entidad,
+                    'entidad_id': log.entidad_id,
+                    'detalles': log.detalles,
+                    'created_at': log.created_at
+                })
+
+            usuario['logs'] = logs
             usuarios.append(usuario)
+
 
         # Obtener todos los roles disponibles
         roles = db.session.execute(text("SELECT * FROM roles")).fetchall()
@@ -219,3 +271,88 @@ class AdminController:
             flash(f'Error al actualizar estado: {str(e)}', 'error')
 
         return redirect(url_for('admin.dashboard'))
+    
+    @staticmethod
+    def view_logs():
+        if 'user_email' not in session:
+            return redirect(url_for('auth.index'))
+
+        usuario = Usuario.find_by_email(session['user_email'])
+        if not usuario or usuario.rol_id != 1:
+            return redirect(url_for('auth.index'))
+
+        nombre = decrypt(usuario.nombre)
+        apellido = decrypt(usuario.apellido)
+        correo = session.get('user_email')
+
+        resultado = db.session.execute(text("""
+            SELECT l.usuario_id, u.nombre, u.apellido, l.accion, l.entidad, 
+                   l.entidad_id, l.detalles, l.created_at
+            FROM log_actividad l
+            JOIN usuarios u ON l.usuario_id = u.id
+            ORDER BY l.created_at DESC
+        """)).fetchall()
+
+        logs = []
+        for row in resultado:
+            r = dict(row._mapping)
+            r["nombre"] = safe_decrypt(r["nombre"])
+            r["apellido"] = safe_decrypt(r["apellido"])
+            logs.append(r)
+
+        return render_template("admin_logs.html",
+                               nombre=nombre,
+                               apellido=apellido,
+                               correo=correo,
+                               logs=logs)
+    
+    @staticmethod
+    def logs_by_incident(incident_id):
+        if 'user_email' not in session:
+            return redirect(url_for('auth.index'))
+        
+        usuario = Usuario.find_by_email(session['user_email'])
+        if not usuario or usuario.rol_id != 1:
+            return redirect(url_for('auth.index'))
+
+        logs = db.session.execute(text("""
+            SELECT la.*, u.nombre, u.apellido
+            FROM log_actividad la
+            JOIN usuarios u ON la.usuario_id = u.id
+            WHERE la.entidad = 'incidencia' AND la.entidad_id = :incident_id
+            ORDER BY la.created_at DESC
+        """), {'incident_id': incident_id}).fetchall()
+
+        return render_template("admin_logs.html", logs=logs, titulo=f"Logs de la incidencia #{incident_id}")
+
+    @staticmethod
+    def logs_by_user(user_id):
+        if 'user_email' not in session:
+            return redirect(url_for('auth.index'))
+        
+        usuario = Usuario.find_by_email(session['user_email'])
+        if not usuario or usuario.rol_id != 1:
+            return redirect(url_for('auth.index'))
+
+        resultados = db.session.execute(text("""
+            SELECT la.*, u.nombre, u.apellido
+            FROM log_actividad la
+            JOIN usuarios u ON la.usuario_id = u.id
+            WHERE la.usuario_id = :user_id
+            ORDER BY la.created_at DESC
+        """), {'user_id': user_id}).fetchall()
+
+        logs = []
+        for row in resultados:
+            nombre = safe_decrypt(row.nombre)
+            apellido = safe_decrypt(row.apellido)
+            logs.append({
+                'usuario_nombre': f"{nombre} {apellido}",
+                'accion': row.accion,
+                'entidad': row.entidad,
+                'entidad_id': row.entidad_id,
+                'detalles': row.detalles,
+                'created_at': row.created_at
+            })
+
+        return render_template("admin_logs.html", logs=logs, titulo=f"Logs del usuario ID #{user_id}")

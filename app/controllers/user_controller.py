@@ -8,6 +8,8 @@ from app.utils.aes_encryption import decrypt
 from datetime import datetime
 from app.models import db  # Importa el SQLAlchemy db
 from sqlalchemy import text
+from app.utils.logger import log_action
+
 
 class UserController:
     @staticmethod
@@ -101,6 +103,16 @@ class UserController:
             try:
                 db.session.commit()
                 flash('Incidencia creada exitosamente', 'success')
+                
+                log_action(
+                    usuario_id=session['user_id'],
+                    accion="crear",
+                     entidad="incidencia",
+                    entidad_id=nueva_incidencia.id,
+                    detalles=f"Incidencia '{titulo}' creada por el usuario",
+                    user_agent=request.headers.get('User-Agent')
+                    )
+                
             except Exception as e:
                 db.session.rollback()
                 flash(f'Error al crear la incidencia: {str(e)}', 'error')
@@ -127,6 +139,16 @@ class UserController:
             try:
                 db.session.commit()
                 flash('Incidencia actualizada exitosamente', 'success')
+                log_action(
+                    usuario_id=session['user_id'],
+                     accion="actualizar",
+                     entidad="incidencia",
+                    entidad_id=incident_id,
+                    detalles=f"Incidencia actualizada: '{incidencia.titulo}'",
+                    user_agent=request.headers.get('User-Agent')
+                    )
+
+
             except Exception as e:
                 db.session.rollback()
                 flash(f'Error al actualizar la incidencia: {str(e)}', 'error')
@@ -154,6 +176,15 @@ class UserController:
             db.session.delete(incidencia)
             db.session.commit()
             flash('Incidencia eliminada exitosamente', 'success')
+            log_action(
+                usuario_id=session['user_id'],
+                accion="eliminar",
+                entidad="incidencia",
+                entidad_id=incident_id,
+                detalles=f"Incidencia '{incidencia.titulo}' eliminada",
+                user_agent=request.headers.get('User-Agent')
+                )
+
         except Exception as e:
             db.session.rollback()
             flash(f'Error al eliminar la incidencia: {str(e)}', 'error')
@@ -262,6 +293,15 @@ class UserController:
             try:
                 db.session.commit()
                 flash('Comentario añadido correctamente', 'success')
+                log_action(
+                    usuario_id=session['user_id'],
+                    accion="comentar",
+                    entidad="comentario",
+                     entidad_id=comentario.id,
+                    detalles=f"Comentario añadido en incidencia ID {incident_id}",
+                    user_agent=request.headers.get('User-Agent')
+                        )
+
             except Exception as e:
                 db.session.rollback()
                 flash(f'Error al añadir el comentario: {str(e)}', 'error')
