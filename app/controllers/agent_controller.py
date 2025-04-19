@@ -4,6 +4,8 @@ from app.models.ticket_models import Incidencia, Comentario, HistorialEstado
 from app.models.catalog_models import Estado, Prioridad, Categoria
 from app.utils.aes_encryption import decrypt
 from datetime import datetime
+from app.utils.logger import log_action
+
 
 class AgentController:
     @staticmethod
@@ -65,6 +67,9 @@ class AgentController:
         comentario = request.form.get('comentario', 'Incidencia resuelta')
         if incidencia.change_status(3, usuario.id, comentario):
             flash('Incidencia resuelta correctamente', 'success')
+            log_action(usuario.id, 'resolver', 'incidencia', incidencia.id,
+            f'Resolvió la incidencia "{incidencia.titulo}"')
+
         else:
             flash('Error al resolver la incidencia', 'error')
 
@@ -160,6 +165,8 @@ class AgentController:
             return redirect(url_for('agent.dashboard'))
 
         incidencia.agente_asignado_id = usuario.id
+        log_action(usuario.id, 'asignar', 'incidencia', incidencia.id, f'Agente se asignó la incidencia "{incidencia.titulo}"')
+
         incidencia.fecha_ultima_actualizacion = datetime.utcnow()
         
         if incidencia.save():
@@ -186,6 +193,7 @@ class AgentController:
             comentario = request.form.get('comentario', '')
 
             if estado_id and int(estado_id) != incidencia.estado_id:
+<<<<<<< Updated upstream
                 if incidencia.change_status(int(estado_id), usuario.id, comentario):
                      # Enviar notificación al usuario
                     try:
@@ -196,9 +204,25 @@ class AgentController:
                         nuevo_estado_nombre = incidencia.estado.nombre if incidencia.estado else "actualizado"
                         
                         notification_service.notify_status_change(incident_id, nuevo_estado_nombre)
+=======
+                estado_anterior = Estado.get_by_id(incidencia.estado_id)
+
+                if incidencia.change_status(int(estado_id), usuario.id, comentario):
+                    nuevo_estado = Estado.get_by_id(int(estado_id))
+
+                    # Enviar notificación al usuario
+                    try:
+                        from app.services.notification_service import NotificationService
+                        notification_service = NotificationService()
+                        notification_service.notify_status_change(incident_id, nuevo_estado.nombre, comentario)
+>>>>>>> Stashed changes
                     except Exception as e:
                         current_app.logger.error(f"Error al enviar notificación: {str(e)}")
+
                     flash('Estado actualizado correctamente', 'success')
+
+                    log_action(usuario.id, 'cambiar_estado', 'incidencia', incidencia.id,
+                        f'Cambio estado de "{incidencia.titulo}" de "{estado_anterior.nombre}" a "{nuevo_estado.nombre}"')
                 else:
                     flash('Error al cambiar el estado', 'error')
             else:

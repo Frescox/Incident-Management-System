@@ -134,13 +134,149 @@
                             <a href="{{ url_for('admin.view_incident', incident_id=i.id) }}" class="btn btn-sm btn-outline-primary" title="Ver">
                                 <i class="bi bi-eye"></i>
                             </a>
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalLogIncidencia{{ i.id }}"
+                                    title="Ver Logs de Incidencia">
+                                <i class="bi bi-clipboard-data"></i>
+                            </button>
                         </td>
+                        
+                        
                     </tr>
                     {% endfor %}
+                    
                 </tbody>
+                    {% for i in incidencias %}
+                    <div class="modal fade" id="modalLogIncidencia{{ i.id }}" tabindex="-1" aria-labelledby="modalLogIncidenciaLabel{{ i.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalLogIncidenciaLabel{{ i.id }}">
+                                Logs de la incidencia #{{ i.id }}: "{{ i.titulo }}"
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                        {% for log in i.logs %}
+                        <pre class="bg-light p-2 rounded small mb-2">
+                    [{{ log.created_at.strftime('%d/%m/%Y %H:%M:%S') }}] 
+                    {{ log.usuario_nombre }} realizó acción '{{ log.accion }}' sobre {{ log.entidad }} #{{ log.entidad_id }}:
+                    {{ log.detalles }}
+                        </pre>
+                        {% else %}
+                        <p class="text-muted">No hay logs disponibles para esta incidencia.</p>
+                        {% endfor %}
+                        </div>
+                    </div>
+                    </div>
+                    </div>
+                    {% endfor %}
             </table>
         </div>
         {% endif %}
+<<<<<<< Updated upstream
+=======
+
+        <!-- Sección de Usuarios -->
+        <!-- Solo la sección de usuarios del dashboard -->
+        <div class="mt-5">
+            <h3>Usuarios Registrados</h3>
+            
+            {% if not usuarios %}
+            <div class="alert alert-info">
+                No hay usuarios registrados.
+            </div>
+            {% else %}
+            <div class="table-responsive mt-3">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>Correo</th>
+                            <th>Rol Actual</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for usuario in usuarios %}
+                        <tr>
+                            <td>{{ usuario.id }}</td>
+                            <td>{{ usuario.nombre }}</td>
+                            <td>{{ usuario.apellido }}</td>
+                            <td>{{ usuario.email }}</td>
+                            <td>{{ usuario.rol_nombre }}</td>
+                            <td>
+                                <span class="badge {% if usuario.estado %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if usuario.estado %}Activo{% else %}Inactivo{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <form method="POST" action="{{ url_for('admin.update_user_role', user_id=usuario.id) }}" class="d-flex">
+                                        <select name="rol_id" class="form-select form-select-sm me-2" required>
+                                            {% for rol in roles %}
+                                            <option value="{{ rol.id }}" {% if rol.id == usuario.rol_id %}selected{% endif %}>
+                                                {{ rol.nombre }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                        <button type="submit" class="btn btn-sm btn-primary">Cambiar Rol</button>
+                                    </form>
+                                    <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=usuario.id) }}" class="ms-2">
+                                        <button type="submit" class="btn btn-sm {% if usuario.estado %}btn-warning{% else %}btn-success{% endif %}">
+                                            {% if usuario.estado %}Desactivar{% else %}Activar{% endif %}
+                                        </button>
+                                    </form>
+                                            <button type="button" class="btn btn-sm btn-dark"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalLogUsuario{{ usuario.id }}"
+                                            title="Ver Logs de Usuario">
+                                        <i class="bi bi-clock-history"></i>
+                                    </button>
+                            
+                                </div>
+                            </td>
+                            
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    {% for usuario in usuarios %}
+                    <div class="modal fade" id="modalLogUsuario{{ usuario.id }}" tabindex="-1" aria-labelledby="modalLogUsuarioLabel{{ usuario.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                        <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalLogUsuarioLabel{{ usuario.id }}">
+                            Logs del usuario     {{ usuario.nombre }} {{ usuario.apellido }}
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            {% if usuario.logs %}
+                            {% for log in usuario.logs %}
+                            <pre class="bg-light p-2 rounded small mb-2">
+                            [{{ log.created_at.strftime('%d/%m/%Y %H:%M:%S') }}]
+                            {{ log.usuario_nombre }} realizó acción '{{ log.accion }}' sobre {{ log.entidad }} #{{ log.entidad_id }}:
+                            {{ log.detalles }}
+                            </pre>
+                            {% endfor %}
+                            {% else %}
+                            <p class="text-muted">No hay logs disponibles para este usuario.</p>
+                            {% endif %}
+                        </div>
+                        </div>
+                    </div>
+                    </div>
+                    {% endfor %}
+
+                </table>
+            </div>
+            {% endif %}
+        </div>
+>>>>>>> Stashed changes
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
