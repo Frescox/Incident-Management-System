@@ -1,5 +1,5 @@
-from flask import render_template, session, redirect, url_for, flash
-from app.models.ticket_models import Incidencia
+from flask import render_template, session, redirect, url_for, flash, request
+from app.models.ticket_models import Incidencia, Comentario, HistorialEstado
 from app.models.catalog_models import Estado, Prioridad, Categoria
 from app.models import db
 from app.models.user import Usuario
@@ -37,6 +37,7 @@ class AdminController:
         apellido = decrypt(usuario.apellido)
         correo = session.get('user_email')
 
+        # Obtener todas las incidencias
         resultados_raw = db.session.execute(text("""
             SELECT i.id, i.titulo, i.descripcion, i.fecha_creacion,
                    e.nombre AS estado_nombre,
@@ -81,10 +82,7 @@ class AdminController:
             incidencia['logs'] = logs
 
             incidencias.append(incidencia)
-
-<<<<<<< Updated upstream
-=======
-
+            
         # Obtener todos los usuarios
         usuarios_raw = db.session.execute(text("""
             SELECT u.id, u.nombre, u.apellido, u.email, u.estado, 
@@ -128,12 +126,13 @@ class AdminController:
         # Obtener todos los roles disponibles
         roles = db.session.execute(text("SELECT * FROM roles")).fetchall()
 
->>>>>>> Stashed changes
         return render_template('admin_dashboard.html',
-                               nombre=nombre,
-                               apellido=apellido,
-                               correo=correo,
-                               incidencias=incidencias)
+                           nombre=nombre,
+                           apellido=apellido,
+                           correo=correo,
+                           incidencias=incidencias,
+                           usuarios=usuarios,
+                           roles=roles)
 
     @staticmethod
     def view_incident(incident_id):
@@ -169,13 +168,18 @@ class AdminController:
         incidencia["agente_nombre"] = safe_decrypt(agente_nombre) if agente_nombre else "Sin agente"
         incidencia["agente_apellido"] = safe_decrypt(agente_apellido) if agente_apellido else ""
 
-        comentarios = db.session.execute(text("""
-            SELECT co.*, us.nombre AS usuario_nombre, us.apellido AS usuario_apellido
-            FROM comentarios co
-            JOIN usuarios us ON co.usuario_id = us.id
-            WHERE co.incidencia_id = :incident_id
-            ORDER BY co.fecha_creacion ASC
-        """), {'incident_id': incident_id}).fetchall()
+        comentarios = Comentario.get_by_incident(incident_id)
+
+        # Verificar si el primer comentario tiene un usuario, y descifrar el nombre y apellido una sola vez
+        if comentarios and comentarios[0].usuario:
+            nombre_descifrado = decrypt(comentarios[0].usuario.nombre) if comentarios[0].usuario.nombre else None
+            apellido_descifrado = decrypt(comentarios[0].usuario.apellido) if comentarios[0].usuario.apellido else None
+
+            # Asignar el mismo nombre y apellido descifrado a todos los comentarios
+            for comentario in comentarios:
+                if comentario.usuario:
+                    comentario.usuario.nombre = nombre_descifrado
+                    comentario.usuario.apellido = apellido_descifrado
 
         historial = db.session.execute(text("""
             SELECT h.*, ea.nombre AS estado_anterior_nombre, en.nombre AS estado_nuevo_nombre,
@@ -193,14 +197,6 @@ class AdminController:
         correo = session.get('user_email')
 
         return render_template('admin_view_incident.html',
-<<<<<<< Updated upstream
-                               nombre=nombre,
-                               apellido=apellido,
-                               correo=correo,
-                               incidencia=incidencia,
-                               comentarios=comentarios,
-                               historial=historial)
-=======
                            nombre=nombre,
                            apellido=apellido,
                            correo=correo,
@@ -360,5 +356,3 @@ class AdminController:
             })
 
         return render_template("admin_logs.html", logs=logs, titulo=f"Logs del usuario ID #{user_id}")
-
->>>>>>> Stashed changes

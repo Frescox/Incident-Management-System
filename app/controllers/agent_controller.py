@@ -115,6 +115,19 @@ class AgentController:
         nombre = decrypt(usuario.nombre)
         apellido = decrypt(usuario.apellido)
         correo = session.get('user_email')
+        
+        # Verificar si el primer comentario tiene un usuario, y descifrar el nombre y apellido una sola vez
+        if comentarios and comentarios[0].usuario:
+            nombre_descifrado = decrypt(comentarios[0].usuario.nombre) if comentarios[0].usuario.nombre else None
+            apellido_descifrado = decrypt(comentarios[0].usuario.apellido) if comentarios[0].usuario.apellido else None
+
+            # Asignar el mismo nombre y apellido descifrado a todos los comentarios
+            for comentario in comentarios:
+                if comentario.usuario:
+                    comentario.usuario.nombre = nombre_descifrado
+                    comentario.usuario.apellido = apellido_descifrado
+
+    # -------------------------------------------------------------------------
 
         return render_template('agent_view_incident.html',
                             nombre=nombre,
@@ -193,18 +206,7 @@ class AgentController:
             comentario = request.form.get('comentario', '')
 
             if estado_id and int(estado_id) != incidencia.estado_id:
-<<<<<<< Updated upstream
-                if incidencia.change_status(int(estado_id), usuario.id, comentario):
-                     # Enviar notificación al usuario
-                    try:
-                        from app.services.notification_service import NotificationService
-                        notification_service = NotificationService()
-
-                        # Aquí debes obtener el nombre o descripción del nuevo estado
-                        nuevo_estado_nombre = incidencia.estado.nombre if incidencia.estado else "actualizado"
                         
-                        notification_service.notify_status_change(incident_id, nuevo_estado_nombre)
-=======
                 estado_anterior = Estado.get_by_id(incidencia.estado_id)
 
                 if incidencia.change_status(int(estado_id), usuario.id, comentario):
@@ -215,7 +217,7 @@ class AgentController:
                         from app.services.notification_service import NotificationService
                         notification_service = NotificationService()
                         notification_service.notify_status_change(incident_id, nuevo_estado.nombre, comentario)
->>>>>>> Stashed changes
+
                     except Exception as e:
                         current_app.logger.error(f"Error al enviar notificación: {str(e)}")
 

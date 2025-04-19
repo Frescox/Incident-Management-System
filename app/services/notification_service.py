@@ -33,7 +33,7 @@ class NotificationService:
             raise ValueError("Error al desencriptar el correo del usuario")
 
 
-    def notify_status_change(self, incidencia_id, nuevo_estado):
+    def notify_status_change(self, incidencia_id, nuevo_estado, comentario):
         """
         Envía un correo cuando cambia el estado de la incidencia.
         """
@@ -43,7 +43,7 @@ class NotificationService:
         try:
             correo = self.get_user_email_by_incident(incidencia_id)
             asunto = f"Actualización de su incidencia #{incidencia_id}"
-            cuerpo = f"Hola,\n\nEl estado de su incidencia ha cambiado a: {nuevo_estado}.\n\nGracias por usar nuestro sistema."
+            cuerpo = f"Hola,\n\nEl estado de su incidencia ha cambiado a: {nuevo_estado}.\n\n{comentario}\n\nGracias por usar nuestro sistema."
 
             enviado = send_email(correo, asunto, cuerpo)
             if not enviado:
