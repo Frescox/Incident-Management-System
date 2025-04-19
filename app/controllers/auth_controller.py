@@ -86,28 +86,42 @@ class AuthController:
                 if not email or not otp:
                     return jsonify({'success': False, 'message': 'Datos incompletos'}), 400
 
-                # Buscar usuario
+                # Obtener todos los usuarios
                 conn = db.get_connection()
                 cursor = conn.cursor(dictionary=True)
-                cursor.execute("SELECT * FROM usuarios WHERE email = %s", (encrypt(email),))
-                user_data = cursor.fetchone()
+                cursor.execute("SELECT * FROM usuarios")
+                users = cursor.fetchall()
                 cursor.close()
                 conn.close()
 
-                if not user_data:
-                    return jsonify({'success': False, 'message': 'Usuario no encontrado'}), 404
+                # Buscar usuario por email
+                usuario_encontrado = None
+                for user in users:
+                    try:
+                        decrypted_email = decrypt(user['email'])  # Desencriptar el correo
+                        if decrypted_email == email:
+                            usuario_encontrado = user
+                            break
+                    except Exception as e:
+                        continue  # Si ocurre un error al desencriptar, se pasa al siguiente usuario
+
+                if not usuario_encontrado:
+                    return jsonify({
+                        'success': False,
+                        'message': 'Usuario no encontrado'
+                    }), 404
 
                 usuario = Usuario(
-                    id=user_data['id'],
-                    nombre=user_data['nombre'],
-                    apellido=user_data['apellido'],
-                    email=user_data['email'],
-                    password=user_data['password'],
-                    rol_id=user_data['rol_id'],
-                    estado=user_data['estado'],
-                    otp=user_data.get('otp'),
-                    otp_expira=user_data.get('otp_expira'),
-                    verificado=user_data.get('verificado', False)
+                    id=usuario_encontrado['id'],
+                    nombre=usuario_encontrado['nombre'],
+                    apellido=usuario_encontrado['apellido'],
+                    email=usuario_encontrado['email'],  # Correo desencriptado
+                    password=usuario_encontrado['password'],
+                    rol_id=usuario_encontrado['rol_id'],
+                    estado=usuario_encontrado['estado'],
+                    otp=usuario_encontrado.get('otp'),
+                    otp_expira=usuario_encontrado.get('otp_expira'),
+                    verificado=usuario_encontrado.get('verificado', False)
                 )
 
                 if usuario.verify_otp(otp):
@@ -122,6 +136,7 @@ class AuthController:
 
                     return jsonify({
                         'success': True,
+                        'message': 'Usario verificado. Redirigiendo...',
                         'redirect': url_for(redirect_url)
                     }), 200
                 else:
@@ -134,6 +149,7 @@ class AuthController:
                 return jsonify({'success': False, 'message': str(e)}), 500
 
         return jsonify({'success': False, 'message': 'Método no permitido'}), 405
+
 
     @staticmethod
     def login():
