@@ -130,28 +130,39 @@
 
         <div class="comments-section">
             <h5>Comentarios</h5>
-            
+
             {% if not comentarios %}
             <div class="alert alert-info">
                 No hay comentarios para esta incidencia.
             </div>
             {% else %}
+                {% set nombre_usuario = comentarios[0].usuario.nombre if comentarios[0].usuario else None %}
+                {% set apellido_usuario = comentarios[0].usuario.apellido if comentarios[0].usuario else None %}
+                
+                {% if nombre_usuario and apellido_usuario %}
+                    {% set nombre_descifrado = nombre_usuario %}
+                    {% set apellido_descifrado = apellido_usuario %}
+                {% else %}
+                    {% set nombre_descifrado = 'Desconocido' %}
+                    {% set apellido_descifrado = '' %}
+                {% endif %}
+            
                 {% for comentario in comentarios %}
                 <div class="comment">
                     <div class="d-flex justify-content-between">
-                        <strong>{{ comentario.usuario_nombre }} {{ comentario.usuario_apellido }}</strong>
+                        <strong>{{ nombre_descifrado }} {{ apellido_descifrado }}</strong>
                         <small class="text-muted">
-                            {% if comentario.created_at %}
-                              {{ comentario.created_at.strftime('%d/%m/%Y %H:%M') }}
+                            {% if comentario.fecha_creacion %}
+                                {{ comentario.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
                             {% else %}
-                              Fecha no disponible
+                                Fecha no disponible
                             {% endif %}
-                          </small>
+                        </small>
                     </div>
                     <p>{{ comentario.contenido }}</p>
                 </div>
                 {% endfor %}
-            {% endif %}
+            {% endif %}  
         </div>
     </div>
 

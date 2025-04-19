@@ -193,7 +193,7 @@ class AgentController:
             comentario = request.form.get('comentario', '')
 
             if estado_id and int(estado_id) != incidencia.estado_id:
-                if incidencia.change_status(int(estado_id), usuario.id, comentario):
+                if incidencia.change_status(int(estado_id), usuario.id):
                      # Enviar notificación al usuario
                     try:
                         from app.services.notification_service import NotificationService
@@ -202,7 +202,7 @@ class AgentController:
                         # Aquí debes obtener el nombre o descripción del nuevo estado
                         nuevo_estado_nombre = incidencia.estado.nombre if incidencia.estado else "actualizado"
                         
-                        notification_service.notify_status_change(incident_id, nuevo_estado_nombre)
+                        notification_service.notify_status_change(incident_id, nuevo_estado_nombre, comentario)
                     except Exception as e:
                         current_app.logger.error(f"Error al enviar notificación: {str(e)}")
                     flash('Estado actualizado correctamente', 'success')
