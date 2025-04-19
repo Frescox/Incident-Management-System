@@ -111,11 +111,17 @@ class AgentController:
         apellido = decrypt(usuario.apellido)
         correo = session.get('user_email')
         
-        
-        for comentario in comentarios:
-            if comentario.usuario:
-                comentario.usuario.nombre = decrypt(comentario.usuario.nombre)
-                comentario.usuario.apellido = decrypt(comentario.usuario.apellido)
+        # Verificar si el primer comentario tiene un usuario, y descifrar el nombre y apellido una sola vez
+        if comentarios and comentarios[0].usuario:
+            nombre_descifrado = decrypt(comentarios[0].usuario.nombre) if comentarios[0].usuario.nombre else None
+            apellido_descifrado = decrypt(comentarios[0].usuario.apellido) if comentarios[0].usuario.apellido else None
+
+            # Asignar el mismo nombre y apellido descifrado a todos los comentarios
+            for comentario in comentarios:
+                if comentario.usuario:
+                    comentario.usuario.nombre = nombre_descifrado
+                    comentario.usuario.apellido = apellido_descifrado
+
     # -------------------------------------------------------------------------
 
         return render_template('agent_view_incident.html',
