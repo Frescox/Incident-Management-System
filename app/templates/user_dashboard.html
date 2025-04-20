@@ -14,144 +14,133 @@
       rel="stylesheet"
       type="text/css"
       href="{{ url_for('static', filename='css/style.css') }}" />
-    <style>
-      .header {
-        background-color: var(--secondary-bg);
-        border-radius: 10px;
-        box-shadow: var(--shadow);
-        padding: 20px;
-        margin-bottom: 30px;
-        transition: var(--transition);
-        border: 1px solid rgba(74, 144, 226, 0.1);
-      }
-
-      .header:hover {
-        box-shadow: var(--glow);
-      }
-
-      .content-section {
-        background-color: var(--card-bg);
-        border-radius: 10px;
-        box-shadow: var(--shadow);
-        padding: 30px;
-        margin-bottom: 30px;
-        transition: var(--transition);
-        border: 1px solid rgba(74, 144, 226, 0.1);
-      }
-
-      .content-section:hover {
-        box-shadow: var(--glow);
-        transform: translateY(-2px);
-      }
-
-      .navbar {
-        background-color: var(--card-bg);
-        border-radius: 10px;
-        margin-bottom: 20px;
-        padding: 15px;
-      }
-
-      .stats-container {
-        display: flex;
-        gap: 15px;
-        margin-bottom: 20px;
-      }
-
-      .stat-card {
-        flex: 1;
-        background-color: var(--input-bg);
-        border-radius: 8px;
-        padding: 15px;
-        text-align: center;
-        transition: var(--transition);
-      }
-
-      .stat-card:hover {
-        transform: translateY(-3px);
-        box-shadow: var(--glow);
-      }
-
-      .stat-value {
-        font-size: 1.8rem;
-        font-weight: 600;
-        color: var(--accent-blue);
-      }
-
-      .stat-label {
-        color: var(--text-secondary);
-        font-size: 0.9rem;
-      }
-
-      .action-btn {
-        margin-right: 5px;
-      }
-
-      .page-title {
-        position: relative;
-        display: inline-block;
-        margin-bottom: 15px;
-      }
-
-      .page-title:after {
-        content: "";
-        position: absolute;
-        bottom: -5px;
-        left: 0;
-        width: 60px;
-        height: 3px;
-        background-color: var(--accent-blue);
-        border-radius: 2px;
-      }
-
-      .footer {
-        background-color: var(--secondary-bg);
-        padding: 15px;
-        border-radius: 10px;
-        margin-top: 20px;
-      }
-    </style>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{{ url_for('static', filename='css/user-dashboard.css') }}" />
   </head>
   <body>
-    <div class="container mt-4">
-      <!-- Mensajes Flash -->
-      <div class="flashed-messages">
-        {% with messages = get_flashed_messages(with_categories=true) %} {% if
-        messages %} {% for category, message in messages %}
-        <div
-          class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show"
-          role="alert">
-          {{ message }}
-          <button
-            type="button"
-            class="btn-close"
-            data-bs-dismiss="alert"
-            aria-label="Close"></button>
-        </div>
-        {% endfor %} {% endif %} {% endwith %}
-      </div>
-
-      <!-- Header con información del usuario -->
-      <div class="header">
-        <div class="navbar">
-          <div class="container-fluid">
+    <!-- Header -->
+    <header class="main-header">
+      <div class="container-fluid">
+        <div class="row align-items-center">
+          <div class="col-md-6">
             <div class="d-flex align-items-center">
-              <div>
-                <h2 class="page-title mb-0">
-                  Sistema de Gestión de Incidencias
-                </h2>
+              <h2 class="logo-text me-4">SGI</h2>
+              <div class="user-welcome">
+                <h4 class="mb-0">Bienvenido, {{ nombre }} {{ apellido }}</h4>
+                <p class="mb-0">{{ correo }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 text-md-end mt-3 mt-md-0">
+            <button
+              type="button"
+              class="btn btn-primary me-2"
+              data-bs-toggle="modal"
+              data-bs-target="#newIncidentModal">
+              <i class="bi bi-plus-circle me-1"></i> Nueva Incidencia
+            </button>
+            <a
+              href="{{ url_for('auth.logout') }}"
+              class="btn btn-outline-danger">
+              <i class="bi bi-box-arrow-right me-1"></i> Cerrar sesión
+            </a>
+          </div>
+        </div>
+    </header>
+    <!-- Mensajes Flash -->
+    <div class="flash-bg container-fluid mt-3">
+      <div class="row">
+        <div class="col">
+          {% with messages = get_flashed_messages(with_categories=true) %} {% if
+          messages %} {% for category, message in messages %}
+          <div
+            class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show"
+            role="alert">
+            {{ message }}
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="alert"
+              aria-label="Close"></button>
+          </div>
+          {% endfor %} {% endif %} {% endwith %}
+        </div>
+      </div>
+    </div>
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Sidebar con estadísticas -->
+      <aside class="sidebar">
+        <h3 class="sidebar-title">Estadísticas</h3>
+
+        <div class="stat-item">
+          <div class="stat-value">
+            {{ incidencias|selectattr('estado_nombre', 'equalto',
+            'nuevo')|list|length }}
+          </div>
+          <div class="stat-label">Nuevas Incidencias</div>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-value">
+            {{ incidencias|selectattr('estado_nombre', 'equalto',
+            'en_progreso')|list|length }}
+          </div>
+          <div class="stat-label">En Progreso</div>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-value">
+            {{ incidencias|selectattr('estado_nombre', 'equalto',
+            'resuelto')|list|length }}
+          </div>
+          <div class="stat-label">Resueltas</div>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-value">
+            {{ incidencias|selectattr('estado_nombre', 'equalto',
+            'cerrado')|list|length }}
+          </div>
+          <div class="stat-label">Cerradas</div>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-value">{{ incidencias|length }}</div>
+          <div class="stat-label">Total Incidencias</div>
+        </div>
+      </aside>
+
+      <!-- Área principal con tabla de incidencias -->
+      <main class="content-area">
+        <div class="table-container">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="section-title m-0">Mis Incidencias</h3>
+            <div class="d-flex">
+              <div class="input-group me-2" style="max-width: 300px">
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Buscar..."
+                  id="searchIncidents" />
+                <button class="btn btn-outline-primary" type="button">
+                  <i class="bi bi-search"></i>
+                </button>
               </div>
               <div class="dropdown">
                 <button
                   class="btn btn-outline-primary dropdown-toggle"
                   type="button"
-                  id="userDropdown"
+                  id="filterDropdown"
                   data-bs-toggle="dropdown"
                   aria-expanded="false">
-                  <i class="bi bi-person-circle me-2"></i>{{ nombre }}
+                  <i class="bi bi-funnel me-1"></i> Filtrar
                 </button>
                 <ul
                   class="dropdown-menu"
-                  aria-labelledby="userDropdown"
+                  aria-labelledby="filterDropdown"
                   style="
                     background-color: var(--card-bg);
                     border-color: var(--border-color);
@@ -161,7 +150,7 @@
                       class="dropdown-item"
                       href="#"
                       style="color: var(--text-primary)"
-                      ><i class="bi bi-person me-2"></i>Mi Perfil</a
+                      >Todas</a
                     >
                   </li>
                   <li>
@@ -169,422 +158,295 @@
                       class="dropdown-item"
                       href="#"
                       style="color: var(--text-primary)"
-                      ><i class="bi bi-gear me-2"></i>Configuración</a
+                      >Nuevas</a
                     >
-                  </li>
-                  <li>
-                    <hr
-                      class="dropdown-divider"
-                      style="border-color: var(--border-color)" />
                   </li>
                   <li>
                     <a
                       class="dropdown-item"
-                      href="{{ url_for('auth.logout') }}"
-                      style="color: var(--danger-color)"
-                      ><i class="bi bi-box-arrow-right me-2"></i>Cerrar
-                      sesión</a
+                      href="#"
+                      style="color: var(--text-primary)"
+                      >En Progreso</a
+                    >
+                  </li>
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      href="#"
+                      style="color: var(--text-primary)"
+                      >Resueltas</a
+                    >
+                  </li>
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      href="#"
+                      style="color: var(--text-primary)"
+                      >Cerradas</a
                     >
                   </li>
                 </ul>
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="row">
-          <div class="col-md-8">
-            <h3>Bienvenido, {{ nombre }} {{ apellido }}</h3>
-            <p class="">{{ correo }}</p>
+          {% if not incidencias %}
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i> No has creado ninguna incidencia todavía.
           </div>
-          <div
-            class="col-md-4 text-md-end d-flex align-items-center justify-content-md-end">
+          {% else %}
+          <div class="table-responsive rounded">
+            <table class="table table-hover">
+              <thead class="table-color">
+                <tr>
+                  <th class="py-3">ID</th>
+                  <th class="py-3">Título</th>
+                  <th class="py-3">Categoría</th>
+                  <th class="py-3">Prioridad</th>
+                  <th class="py-3">Estado</th>
+                  <th class="py-3">Fecha Creación</th>
+                  <th class="py-3 text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="table-color">
+                {% for incidencia in incidencias %}
+                <tr class="align-middle table-row {% if incidencia.prioridad_nombre == 'alta' %}priority-high{% elif incidencia.prioridad_nombre == 'media' %}priority-medium{% else %}priority-low{% endif %}">
+                  <td class="py-3">{{ incidencia.id }}</td>
+                  <td class="py-3 fw-medium">{{ incidencia.titulo }}</td>
+                  <td class="py-3">{{ incidencia.categoria_nombre }}</td>
+                  <td class="py-3">
+                    <span class="priority-indicator {% if incidencia.prioridad_nombre == 'alta' %}priority-high-dot{% elif incidencia.prioridad_nombre == 'media' %}priority-medium-dot{% else %}priority-low-dot{% endif %} me-2"></span>
+                    {{ incidencia.prioridad_nombre|capitalize }}
+                  </td>
+                  <td class="py-3">
+                    <span class="badge rounded-pill {% if incidencia.estado_nombre == 'nuevo' %}badge-new{% elif incidencia.estado_nombre == 'en_progreso' %}badge-in-progress{% elif incidencia.estado_nombre == 'resuelto' %}badge-resolved{% else %}badge-closed{% endif %}">
+                      {{ incidencia.estado_nombre|replace('_', ' ')|title }}
+                    </span>
+                  </td>
+                  <td class="py-3">
+                    {{ incidencia.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
+                  </td>
+                  <td class="py-3 text-center">
+                    <div class="btn-group shadow-sm">
+                      <a href="{{ url_for('user.view_incident', incident_id=incidencia.id) }}" class="btn btn-sm btn-outline-primary" title="Ver Detalles">
+                        <i class="bi bi-eye"></i>
+                      </a>
+                      <button class="btn btn-sm btn-outline-secondary edit-incident-btn" 
+                              data-id="{{ incidencia.id }}"
+                              data-titulo="{{ incidencia.titulo }}"
+                              data-descripcion="{{ incidencia.descripcion }}"
+                              data-categoria="{{ incidencia.categoria_id }}"
+                              data-prioridad="{{ incidencia.prioridad_id }}"
+                              title="Editar Incidencia">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <form method="POST" 
+                            action="{{ url_for('user.delete_incident', incident_id=incidencia.id) }}" 
+                            class="d-inline"
+                            onsubmit="return confirm('¿Estás seguro de eliminar esta incidencia?');">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar Incidencia">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% endif %}
+        </div>
+      </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="page-footer">
+      <p class="m-0">&copy; 2025 Sistema de Gestión de Incidencias</p>
+    </footer>
+
+    <!-- Modal para nueva incidencia -->
+    <div
+      class="modal fade"
+      id="newIncidentModal"
+      tabindex="-1"
+      aria-labelledby="newIncidentModalLabel"
+      aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="newIncidentModalLabel">
+              Nueva Incidencia
+            </h5>
             <button
               type="button"
-              class="btn btn-primary"
-              data-bs-toggle="modal"
-              data-bs-target="#newIncidentModal">
-              <i class="bi bi-plus-circle me-2"></i> Nueva Incidencia
-            </button>
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"></button>
           </div>
-        </div>
-      </div>
-
-      <!-- Estadísticas Rápidas -->
-      <div class="stats-container">
-        <div class="stat-card">
-          <div class="stat-value">
-            {{ incidencias|selectattr('estado_nombre', 'equalto',
-            'nuevo')|list|length }}
-          </div>
-          <div class="stat-label">Nuevas</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">
-            {{ incidencias|selectattr('estado_nombre', 'equalto',
-            'en_progreso')|list|length }}
-          </div>
-          <div class="stat-label">En Progreso</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">
-            {{ incidencias|selectattr('estado_nombre', 'equalto',
-            'resuelto')|list|length }}
-          </div>
-          <div class="stat-label">Resueltas</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">{{ incidencias|length }}</div>
-          <div class="stat-label">Total</div>
-        </div>
-      </div>
-
-      <!-- Sección Principal con Incidencias -->
-      <div class="content-section">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h3 class="page-title m-0">Mis Incidencias</h3>
-          <div class="d-flex">
-            <div class="input-group me-2" style="max-width: 300px">
-              <input
-                type="text"
-                class="form-control"
-                placeholder="Buscar incidencias..."
-                id="searchIncidents" />
-              <button class="btn btn-outline-primary" type="button">
-                <i class="bi bi-search"></i>
+          <form method="POST" action="{{ url_for('user.create_incident') }}">
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="titulo" class="form-label">Título</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="titulo"
+                  name="titulo"
+                  required />
+              </div>
+              <div class="mb-3">
+                <label for="descripcion" class="form-label">Descripción</label>
+                <textarea
+                  class="form-control"
+                  id="descripcion"
+                  name="descripcion"
+                  rows="4"
+                  required></textarea>
+              </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="categoria_id" class="form-label">Categoría</label>
+                  <select
+                    class="form-select"
+                    id="categoria_id"
+                    name="categoria_id"
+                    required>
+                    {% for categoria in categorias %}
+                    <option value="{{ categoria.id }}">
+                      {{ categoria.nombre }}
+                    </option>
+                    {% else %}
+                    <option value="" disabled>
+                      No hay categorías disponibles
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="prioridad_id" class="form-label">Prioridad</label>
+                  <select
+                    class="form-select"
+                    id="prioridad_id"
+                    name="prioridad_id"
+                    required>
+                    {% for prioridad in prioridades %}
+                    <option value="{{ prioridad.id }}">
+                      {{ prioridad.nombre }}
+                    </option>
+                    {% else %}
+                    <option value="" disabled>
+                      No hay prioridades disponibles
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                data-bs-dismiss="modal">
+                Cancelar
+              </button>
+              <button type="submit" class="btn btn-primary">
+                Crear Incidencia
               </button>
             </div>
-            <div class="dropdown">
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para editar incidencia -->
+    <div
+      class="modal fade"
+      id="editIncidentModal"
+      tabindex="-1"
+      aria-labelledby="editIncidentModalLabel"
+      aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editIncidentModalLabel">
+              Editar Incidencia
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"></button>
+          </div>
+          <form method="POST" id="editIncidentForm">
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="edit_titulo" class="form-label">Título</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="edit_titulo"
+                  name="titulo"
+                  required />
+              </div>
+              <div class="mb-3">
+                <label for="edit_descripcion" class="form-label"
+                  >Descripción</label
+                >
+                <textarea
+                  class="form-control"
+                  id="edit_descripcion"
+                  name="descripcion"
+                  rows="4"
+                  required></textarea>
+              </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="edit_categoria_id" class="form-label"
+                    >Categoría</label
+                  >
+                  <select
+                    class="form-select"
+                    id="edit_categoria_id"
+                    name="categoria_id"
+                    required>
+                    {% for categoria in categorias %}
+                    <option value="{{ categoria.id }}">
+                      {{ categoria.nombre }}
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="edit_prioridad_id" class="form-label"
+                    >Prioridad</label
+                  >
+                  <select
+                    class="form-select"
+                    id="edit_prioridad_id"
+                    name="prioridad_id"
+                    required>
+                    {% for prioridad in prioridades %}
+                    <option value="{{ prioridad.id }}">
+                      {{ prioridad.nombre }}
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
               <button
-                class="btn btn-outline-primary dropdown-toggle"
                 type="button"
-                id="filterDropdown"
-                data-bs-toggle="dropdown"
-                aria-expanded="false">
-                <i class="bi bi-funnel me-1"></i> Filtrar
+                class="btn btn-secondary"
+                data-bs-dismiss="modal">
+                Cancelar
               </button>
-              <ul
-                class="dropdown-menu"
-                aria-labelledby="filterDropdown"
-                style="
-                  background-color: var(--card-bg);
-                  border-color: var(--border-color);
-                ">
-                <li>
-                  <a
-                    class="dropdown-item"
-                    href="#"
-                    style="color: var(--text-primary)"
-                    >Todas</a
-                  >
-                </li>
-                <li>
-                  <a
-                    class="dropdown-item"
-                    href="#"
-                    style="color: var(--text-primary)"
-                    >Nuevas</a
-                  >
-                </li>
-                <li>
-                  <a
-                    class="dropdown-item"
-                    href="#"
-                    style="color: var(--text-primary)"
-                    >En Progreso</a
-                  >
-                </li>
-                <li>
-                  <a
-                    class="dropdown-item"
-                    href="#"
-                    style="color: var(--text-primary)"
-                    >Resueltas</a
-                  >
-                </li>
-                <li>
-                  <a
-                    class="dropdown-item"
-                    href="#"
-                    style="color: var(--text-primary)"
-                    >Cerradas</a
-                  >
-                </li>
-              </ul>
+              <button type="submit" class="btn btn-primary">
+                Guardar Cambios
+              </button>
             </div>
-          </div>
-        </div>
-
-        {% if not incidencias %}
-        <div class="alert alert-info">
-          <i class="bi bi-info-circle me-2"></i> No has creado ninguna
-          incidencia todavía.
-        </div>
-        {% else %}
-        <div class="table-responsive">
-          <table class="table table-hover">
-            <thead class="table-light">
-              <tr>
-                <th>ID</th>
-                <th>Título</th>
-                <th>Categoría</th>
-                <th>Prioridad</th>
-                <th>Estado</th>
-                <th>Fecha Creación</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for incidencia in incidencias %}
-              <tr
-                class="align-middle {% if incidencia.prioridad_nombre == 'alta' %}priority-high {% elif incidencia.prioridad_nombre == 'media' %}priority-medium {% else %}priority-low{% endif %}">
-                <td>{{ incidencia.id }}</td>
-                <td>{{ incidencia.titulo }}</td>
-                <td>{{ incidencia.categoria_nombre }}</td>
-                <td>{{ incidencia.prioridad_nombre|capitalize }}</td>
-                <td>
-                  <span
-                    class="badge {% if incidencia.estado_nombre == 'nuevo' %}badge-new {% elif incidencia.estado_nombre == 'en_progreso' %}badge-in-progress {% elif incidencia.estado_nombre == 'resuelto' %}badge-resolved {% else %}badge-closed{% endif %}">
-                    {{ incidencia.estado_nombre|replace('_', ' ')|title }}
-                  </span>
-                </td>
-                <td>
-                  {{ incidencia.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
-                </td>
-                <td>
-                  <div class="btn-group">
-                    <a
-                      href="{{ url_for('user.view_incident', incident_id=incidencia.id) }}"
-                      class="btn btn-sm btn-outline-primary action-btn"
-                      title="Ver Detalles">
-                      <i class="bi bi-eye"></i>
-                    </a>
-                    <button
-                      class="btn btn-sm btn-outline-secondary action-btn edit-incident-btn"
-                      data-id="{{ incidencia.id }}"
-                      data-titulo="{{ incidencia.titulo }}"
-                      data-descripcion="{{ incidencia.descripcion }}"
-                      data-categoria="{{ incidencia.categoria_id }}"
-                      data-prioridad="{{ incidencia.prioridad_id }}"
-                      title="Editar Incidencia">
-                      <i class="bi bi-pencil"></i>
-                    </button>
-                    <form
-                      method="POST"
-                      action="{{ url_for('user.delete_incident', incident_id=incidencia.id) }}"
-                      class="d-inline"
-                      onsubmit="return confirm('¿Estás seguro de eliminar esta incidencia?');">
-                      <button
-                        type="submit"
-                        class="btn btn-sm btn-outline-danger"
-                        title="Eliminar Incidencia">
-                        <i class="bi bi-trash"></i>
-                      </button>
-                    </form>
-                  </div>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        {% endif %}
-      </div>
-
-      <!-- Footer -->
-      <div class="footer text-center">
-        <p class="m-0">&copy; 2025 Sistema de Gestión de Incidencias</p>
-      </div>
-
-      <!-- Modal para nueva incidencia -->
-      <div
-        class="modal fade"
-        id="newIncidentModal"
-        tabindex="-1"
-        aria-labelledby="newIncidentModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="newIncidentModalLabel">
-                Nueva Incidencia
-              </h5>
-              <button
-                type="button"
-                class="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"></button>
-            </div>
-            <form method="POST" action="{{ url_for('user.create_incident') }}">
-              <div class="modal-body">
-                <div class="mb-3">
-                  <label for="titulo" class="form-label">Título</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="titulo"
-                    name="titulo"
-                    required />
-                </div>
-                <div class="mb-3">
-                  <label for="descripcion" class="form-label"
-                    >Descripción</label
-                  >
-                  <textarea
-                    class="form-control"
-                    id="descripcion"
-                    name="descripcion"
-                    rows="4"
-                    required></textarea>
-                </div>
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label for="categoria_id" class="form-label"
-                      >Categoría</label
-                    >
-                    <select
-                      class="form-select"
-                      id="categoria_id"
-                      name="categoria_id"
-                      required>
-                      {% for categoria in categorias %}
-                      <option value="{{ categoria.id }}">
-                        {{ categoria.nombre }}
-                      </option>
-                      {% else %}
-                      <option value="" disabled>
-                        No hay categorías disponibles
-                      </option>
-                      {% endfor %}
-                    </select>
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label for="prioridad_id" class="form-label"
-                      >Prioridad</label
-                    >
-                    <select
-                      class="form-select"
-                      id="prioridad_id"
-                      name="prioridad_id"
-                      required>
-                      {% for prioridad in prioridades %}
-                      <option value="{{ prioridad.id }}">
-                        {{ prioridad.nombre }}
-                      </option>
-                      {% else %}
-                      <option value="" disabled>
-                        No hay prioridades disponibles
-                      </option>
-                      {% endfor %}
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div class="modal-footer">
-                <button
-                  type="button"
-                  class="btn btn-secondary"
-                  data-bs-dismiss="modal">
-                  Cancelar
-                </button>
-                <button type="submit" class="btn btn-primary">
-                  Crear Incidencia
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      <!-- Modal para editar incidencia -->
-      <div
-        class="modal fade"
-        id="editIncidentModal"
-        tabindex="-1"
-        aria-labelledby="editIncidentModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="editIncidentModalLabel">
-                Editar Incidencia
-              </h5>
-              <button
-                type="button"
-                class="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"></button>
-            </div>
-            <form method="POST" id="editIncidentForm">
-              <div class="modal-body">
-                <div class="mb-3">
-                  <label for="edit_titulo" class="form-label">Título</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="edit_titulo"
-                    name="titulo"
-                    required />
-                </div>
-                <div class="mb-3">
-                  <label for="edit_descripcion" class="form-label"
-                    >Descripción</label
-                  >
-                  <textarea
-                    class="form-control"
-                    id="edit_descripcion"
-                    name="descripcion"
-                    rows="4"
-                    required></textarea>
-                </div>
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label for="edit_categoria_id" class="form-label"
-                      >Categoría</label
-                    >
-                    <select
-                      class="form-select"
-                      id="edit_categoria_id"
-                      name="categoria_id"
-                      required>
-                      {% for categoria in categorias %}
-                      <option value="{{ categoria.id }}">
-                        {{ categoria.nombre }}
-                      </option>
-                      {% endfor %}
-                    </select>
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label for="edit_prioridad_id" class="form-label"
-                      >Prioridad</label
-                    >
-                    <select
-                      class="form-select"
-                      id="edit_prioridad_id"
-                      name="prioridad_id"
-                      required>
-                      {% for prioridad in prioridades %}
-                      <option value="{{ prioridad.id }}">
-                        {{ prioridad.nombre }}
-                      </option>
-                      {% endfor %}
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div class="modal-footer">
-                <button
-                  type="button"
-                  class="btn btn-secondary"
-                  data-bs-dismiss="modal">
-                  Cancelar
-                </button>
-                <button type="submit" class="btn btn-primary">
-                  Guardar Cambios
-                </button>
-              </div>
-            </form>
-          </div>
+          </form>
         </div>
       </div>
     </div>
@@ -643,26 +505,6 @@
             }
           });
         });
-
-      // Animación de entrada para los elementos
-      document.addEventListener("DOMContentLoaded", function () {
-        setTimeout(() => {
-          document.querySelector(".header").classList.add("show");
-        }, 100);
-
-        setTimeout(() => {
-          document.querySelectorAll(".stat-card").forEach((card, index) => {
-            setTimeout(() => {
-              card.style.opacity = "1";
-              card.style.transform = "translateY(0)";
-            }, index * 100);
-          });
-        }, 300);
-
-        setTimeout(() => {
-          document.querySelector(".content-section").classList.add("show");
-        }, 500);
-      });
     </script>
   </body>
 </html>
