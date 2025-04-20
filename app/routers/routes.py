@@ -44,6 +44,9 @@ admin_bp.route('/users/<int:user_id>/update_role', methods=['POST'])(AdminContro
 admin_bp.route('/users/<int:user_id>/toggle_status', methods=['POST'])(AdminController.toggle_user_status)
 admin_bp.route('/logs/incident/<int:incident_id>', methods=['GET'])(AdminController.logs_by_incident)
 admin_bp.route('/logs/user/<int:user_id>', methods=['GET'])(AdminController.logs_by_user)
+admin_bp.route('/general_report', methods=['GET'])(AdminController.general_report)
+
+
 
 
 

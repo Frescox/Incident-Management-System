@@ -1,4 +1,4 @@
-from flask import render_template, session, redirect, url_for, flash, request
+from flask import jsonify, render_template, session, redirect, url_for, flash, request
 from app.models.ticket_models import Incidencia, Comentario, HistorialEstado
 from app.models.catalog_models import Estado, Prioridad, Categoria
 from app.models import db
@@ -37,14 +37,45 @@ class AdminController:
         apellido = decrypt(usuario.apellido)
         correo = session.get('user_email')
 
-        # Obtener todas las incidencias
+        estados_count = dict(db.session.execute(text("""
+            SELECT e.nombre, COUNT(*) FROM incidencias i
+            JOIN estados e ON i.estado_id = e.id
+            GROUP BY e.nombre
+        """)).fetchall())
+
+        categorias_count = dict(db.session.execute(text("""
+            SELECT c.nombre, COUNT(*) FROM incidencias i
+            JOIN categorias c ON i.categoria_id = c.id
+            GROUP BY c.nombre
+        """)).fetchall())
+
+        prioridades_count = dict(db.session.execute(text("""
+            SELECT p.nombre, COUNT(*) FROM incidencias i
+            JOIN prioridades p ON i.prioridad_id = p.id
+            GROUP BY p.nombre
+        """)).fetchall())
+
+        usuarios_vs_agentes = dict(db.session.execute(text("""
+            SELECT r.nombre, COUNT(*) FROM usuarios u
+            JOIN roles r ON u.rol_id = r.id
+            WHERE r.nombre IN ('usuario', 'agente')
+            GROUP BY r.nombre
+        """)).fetchall())
+
+        reporte = {
+            "estados": estados_count,
+            "categorias": categorias_count,
+            "prioridades": prioridades_count,
+            "usuarios_vs_agentes": usuarios_vs_agentes
+        }
+
         resultados_raw = db.session.execute(text("""
             SELECT i.id, i.titulo, i.descripcion, i.fecha_creacion,
-                   e.nombre AS estado_nombre,
-                   p.nombre AS prioridad_nombre,
-                   c.nombre AS categoria_nombre,
-                   uc.nombre AS creador_nombre, uc.apellido AS creador_apellido,
-                   ua.nombre AS agente_nombre, ua.apellido AS agente_apellido
+                e.nombre AS estado_nombre,
+                p.nombre AS prioridad_nombre,
+                c.nombre AS categoria_nombre,
+                uc.nombre AS creador_nombre, uc.apellido AS creador_apellido,
+                ua.nombre AS agente_nombre, ua.apellido AS agente_apellido
             FROM incidencias i
             JOIN estados e ON i.estado_id = e.id
             JOIN prioridades p ON i.prioridad_id = p.id
@@ -64,29 +95,24 @@ class AdminController:
             incidencia["agente_nombre"] = safe_decrypt(agente_nombre) if agente_nombre else "Sin agente"
             incidencia["agente_apellido"] = safe_decrypt(agente_apellido) if agente_apellido else ""
 
-            # Obtener logs relacionados con esta incidencia
             logs_raw = db.session.execute(text("""
                 SELECT * FROM log_actividad
                 WHERE entidad = 'incidencia' AND entidad_id = :incidencia_id
                 ORDER BY created_at DESC
             """), {'incidencia_id': incidencia['id']}).fetchall()
 
-            # Convertir a lista de diccionarios
             logs = []
             for log in logs_raw:
                 log_dict = dict(log._mapping)
                 log_dict['usuario_nombre'] = get_decrypted_user_name(log_dict['usuario_id'])
                 logs.append(log_dict)
 
-
             incidencia['logs'] = logs
-
             incidencias.append(incidencia)
-            
-        # Obtener todos los usuarios
+
         usuarios_raw = db.session.execute(text("""
             SELECT u.id, u.nombre, u.apellido, u.email, u.estado, 
-                   r.nombre AS rol_nombre, r.id AS rol_id
+                r.nombre AS rol_nombre, r.id AS rol_id
             FROM usuarios u
             JOIN roles r ON u.rol_id = r.id
             ORDER BY u.id
@@ -98,8 +124,7 @@ class AdminController:
             usuario["nombre"] = safe_decrypt(usuario.get("nombre"))
             usuario["apellido"] = safe_decrypt(usuario.get("apellido"))
             usuario["email"] = safe_decrypt(usuario.get("email"))
-    
-             # Obtener logs para cada usuario individualmente
+
             logs_raw = db.session.execute(text("""
                 SELECT la.*, u.nombre, u.apellido
                 FROM log_actividad la
@@ -122,17 +147,16 @@ class AdminController:
             usuario['logs'] = logs
             usuarios.append(usuario)
 
-
-        # Obtener todos los roles disponibles
         roles = db.session.execute(text("SELECT * FROM roles")).fetchall()
 
         return render_template('admin_dashboard.html',
-                           nombre=nombre,
-                           apellido=apellido,
-                           correo=correo,
-                           incidencias=incidencias,
-                           usuarios=usuarios,
-                           roles=roles)
+                            nombre=nombre,
+                            apellido=apellido,
+                            correo=correo,
+                            incidencias=incidencias,
+                            usuarios=usuarios,
+                            roles=roles,
+                            reporte=reporte)
 
     @staticmethod
     def view_incident(incident_id):
@@ -356,3 +380,56 @@ class AdminController:
             })
 
         return render_template("admin_logs.html", logs=logs, titulo=f"Logs del usuario ID #{user_id}")
+    
+    @staticmethod
+    def general_report():
+        if 'user_email' not in session:
+            return redirect(url_for('auth.index'))
+
+        usuario = Usuario.find_by_email(session['user_email'])
+        if not usuario or usuario.rol_id != 1:
+            return redirect(url_for('auth.index'))
+
+        # Obtener estadísticas por estado
+        incidencias_estado = db.session.execute(text("""
+            SELECT e.nombre AS label, COUNT(*) AS count
+            FROM incidencias i
+            JOIN estados e ON i.estado_id = e.id
+            GROUP BY e.nombre
+        """)).fetchall()
+
+        # Por categoría
+        incidencias_categoria = db.session.execute(text("""
+            SELECT c.nombre AS label, COUNT(*) AS count
+            FROM incidencias i
+            JOIN categorias c ON i.categoria_id = c.id
+            GROUP BY c.nombre
+        """)).fetchall()
+
+        # Por prioridad
+        incidencias_prioridad = db.session.execute(text("""
+            SELECT p.nombre AS label, COUNT(*) AS count
+            FROM incidencias i
+            JOIN prioridades p ON i.prioridad_id = p.id
+            GROUP BY p.nombre
+        """)).fetchall()
+
+        # Por tipo de usuario (roles)
+        usuarios_roles = db.session.execute(text("""
+            SELECT r.nombre AS label, COUNT(*) AS count
+            FROM usuarios u
+            JOIN roles r ON u.rol_id = r.id
+            GROUP BY r.nombre
+        """)).fetchall()
+
+        # Convertir los resultados en listas simples para graficar
+        def convertir(resultados):
+            return [{'label': safe_decrypt(r.label) if 'usuario' in r.label.lower() or 'agente' in r.label.lower() else r.label, 'count': r.count} for r in resultados]
+
+        return jsonify({
+            'estado_data': convertir(incidencias_estado),
+            'categoria_data': convertir(incidencias_categoria),
+            'prioridad_data': convertir(incidencias_prioridad),
+            'roles_data': convertir(usuarios_roles)
+        })
+
