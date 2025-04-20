@@ -15,17 +15,25 @@ def encrypt(text):
     encrypted = cipher.encrypt(padded_text)
     return base64.b64encode(iv + encrypted).decode('utf-8')
 
+import time
+
 def decrypt(encrypted_text):
+    start_time = time.time()
+
     try:
         raw = base64.b64decode(encrypted_text)
         if len(raw) < 16:
             raise ValueError("Encrypted text is too short to contain a valid IV.")
         iv = raw[:16]
         cipher = AES.new(KEY, AES.MODE_CBC, iv)
+        
         # Desencriptar el texto
         decrypted = cipher.decrypt(raw[16:])
-        # Quitar el padding después de desencriptar
         decrypted_text = unpad(decrypted, AES.block_size).decode('utf-8')
+
+        end_time = time.time()
+        print(f"Tiempo de desencriptación: {end_time - start_time:.4f} segundos")
+
         return decrypted_text
     except Exception as e:
         print(f"Error decrypting: {e}")
