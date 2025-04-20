@@ -1,9 +1,10 @@
 from flask import request, jsonify, session, redirect, url_for, render_template
-from app.models.user import Usuario
+from app.models.user_models import Usuario
 from app.services.mail_service import send_email
 from app.services.sms_service import send_sms
 from app.utils.aes_encryption import encrypt, decrypt
-from app.db.database import db
+from app.models.core import db
+import datetime
 
 class AuthController:
     @staticmethod
@@ -26,43 +27,37 @@ class AuthController:
                 if not all([nombre, apellido, email, password, metodo_verificacion]):
                     return jsonify({'success': False, 'message': 'Todos los campos son obligatorios'}), 400
 
-                # Buscar usuario por email (incluyendo desactivados)
-                conn = db.get_connection()
-                cursor = conn.cursor(dictionary=True)
-                cursor.execute("SELECT email FROM usuarios")
-                existing_users = cursor.fetchall()
-                cursor.close()
-                conn.close()
+                # Verificar si el email ya existe (con desencriptación)
+                existing_user = Usuario.find_by_email(email)
+                if existing_user:
+                    return jsonify({'success': False, 'message': 'El correo ya está registrado'}), 400
 
-                # Verificar si el email ya existe
-                for user in existing_users:
-                    try:
-                        if decrypt(user['email']) == email:
-                            return jsonify({'success': False, 'message': 'El correo ya está registrado'}), 400
-                    except:
-                        continue
-
-                # Crear nuevo usuario
+                # Crear nuevo usuario con SQLAlchemy (todo encriptado)
                 nuevo_usuario = Usuario(
                     nombre=encrypt(nombre),
                     apellido=encrypt(apellido),
-                    email=encrypt(email),
+                    email=encrypt(email),  # El email se encripta
                     password=encrypt(password),
                     telefono=encrypt(telefono) if telefono else None,
                     metodo_verificacion=metodo_verificacion,
                     estado=True,
-                    verificado=False
+                    verificado=False,
+                    rol_id=3  # Usuario regular por defecto
                 )
 
-                # Generar y enviar OTP
-                otp = nuevo_usuario.generate_otp()
-                if metodo_verificacion == 'email':
-                    send_email(email, 'Código de verificación', f'Tu código es: {otp}')
-                elif metodo_verificacion == 'sms' and telefono:
-                    send_sms(telefono, f'Tu código de verificación: {otp}')
+                # Guardar en la base de datos usando SQLAlchemy
+                db.session.add(nuevo_usuario)
+                db.session.commit()
 
-                nuevo_usuario.save()
-                session['user_email'] = email
+                # Generar y enviar OTP
+                otp_code = nuevo_usuario.generate_otp()
+
+                if metodo_verificacion == 'email':
+                    send_email(email, 'Código de verificación', f'Tu código es: {otp_code}')
+                elif metodo_verificacion == 'sms' and telefono:
+                    send_sms(telefono, f'Tu código de verificación: {otp_code}')
+
+                session['user_email'] = email  # Guardamos el email sin encriptar en la sesión
 
                 return jsonify({
                     'success': True,
@@ -71,6 +66,7 @@ class AuthController:
                 }), 200
 
             except Exception as e:
+                db.session.rollback()
                 return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
 
         return jsonify({'success': False, 'message': 'Método no permitido'}), 405
@@ -80,50 +76,22 @@ class AuthController:
         if request.method == 'POST':
             try:
                 data = request.get_json() if request.is_json else request.form
-                email = session.get('user_email')
+                email = session.get('user_email')  # Email sin encriptar de la sesión
                 otp = data.get('otp')
 
                 if not email or not otp:
                     return jsonify({'success': False, 'message': 'Datos incompletos'}), 400
 
-                # Obtener todos los usuarios
-                conn = db.get_connection()
-                cursor = conn.cursor(dictionary=True)
-                cursor.execute("SELECT * FROM usuarios")
-                users = cursor.fetchall()
-                cursor.close()
-                conn.close()
+                # Buscar usuario por email desencriptado
+                usuario = Usuario.find_by_email(email)
 
-                # Buscar usuario por email
-                usuario_encontrado = None
-                for user in users:
-                    try:
-                        decrypted_email = decrypt(user['email'])  # Desencriptar el correo
-                        if decrypted_email == email:
-                            usuario_encontrado = user
-                            break
-                    except Exception as e:
-                        continue  # Si ocurre un error al desencriptar, se pasa al siguiente usuario
-
-                if not usuario_encontrado:
+                if not usuario:
                     return jsonify({
                         'success': False,
                         'message': 'Usuario no encontrado'
                     }), 404
 
-                usuario = Usuario(
-                    id=usuario_encontrado['id'],
-                    nombre=usuario_encontrado['nombre'],
-                    apellido=usuario_encontrado['apellido'],
-                    email=usuario_encontrado['email'],  # Correo desencriptado
-                    password=usuario_encontrado['password'],
-                    rol_id=usuario_encontrado['rol_id'],
-                    estado=usuario_encontrado['estado'],
-                    otp=usuario_encontrado.get('otp'),
-                    otp_expira=usuario_encontrado.get('otp_expira'),
-                    verificado=usuario_encontrado.get('verificado', False)
-                )
-
+                # Verificar OTP
                 if usuario.verify_otp(otp):
                     session['user_id'] = usuario.id
                     session['user_role'] = usuario.rol_id
@@ -136,7 +104,7 @@ class AuthController:
 
                     return jsonify({
                         'success': True,
-                        'message': 'Usario verificado. Redirigiendo...',
+                        'message': 'Usuario verificado. Redirigiendo...',
                         'redirect': url_for(redirect_url)
                     }), 200
                 else:
@@ -146,15 +114,22 @@ class AuthController:
                     }), 400
 
             except Exception as e:
+                db.session.rollback()
                 return jsonify({'success': False, 'message': str(e)}), 500
 
         return jsonify({'success': False, 'message': 'Método no permitido'}), 405
-
 
     @staticmethod
     def login():
         if request.method == 'POST':
             try:
+
+                if 'user_email' in session:
+                    return jsonify({
+                        'success': False,
+                        'message': 'Existe una cuenta logeada en la sesión'
+                    }), 400
+            
                 data = request.get_json() if request.is_json else request.form
                 email = data.get('email')
                 password = data.get('password')
@@ -165,72 +140,33 @@ class AuthController:
                         'message': 'Email y contraseña requeridos'
                     }), 400
 
-                # Obtener todos los usuarios
-                conn = db.get_connection()
-                cursor = conn.cursor(dictionary=True)
-                cursor.execute("SELECT * FROM usuarios")
-                users = cursor.fetchall()
-                cursor.close()
-                conn.close()
+                # Buscar usuario por email desencriptado
+                usuario = Usuario.find_by_email(email)
 
-                # Buscar usuario por email
-                usuario_encontrado = None
-                for user in users:
-                    try:
-                        if decrypt(user['email']) == email:
-                            usuario_encontrado = user
-                            break
-                    except:
-                        continue
-
-                if not usuario_encontrado:
+                if not usuario or not usuario.estado:
                     return jsonify({
                         'success': False,
                         'message': 'Credenciales inválidas'
                     }), 401
 
-                # Verificar estado
-                if not usuario_encontrado['estado']:
-                    return jsonify({
-                        'success': False,
-                        'message': 'Cuenta desactivada. Contacta al administrador.'
-                    }), 403
-
                 # Verificar contraseña
-                try:
-                    if password != decrypt(usuario_encontrado['password']):
-                        return jsonify({
-                            'success': False,
-                            'message': 'Credenciales inválidas'
-                        }), 401
-                except:
+                if not usuario.verify_password(password):
                     return jsonify({
                         'success': False,
-                        'message': 'Error procesando tu contraseña'
-                    }), 500
-
-                # Crear objeto usuario
-                usuario = Usuario(
-                    id=usuario_encontrado['id'],
-                    nombre=usuario_encontrado['nombre'],
-                    apellido=usuario_encontrado['apellido'],
-                    email=usuario_encontrado['email'],
-                    password=usuario_encontrado['password'],
-                    rol_id=usuario_encontrado['rol_id'],
-                    estado=usuario_encontrado['estado'],
-                    verificado=usuario_encontrado.get('verificado', False),
-                    metodo_verificacion=usuario_encontrado.get('metodo_verificacion')
-                )
+                        'message': 'Credenciales inválidas'
+                    }), 401
 
                 # Verificación OTP si es necesario
                 if not usuario.verificado:
-                    otp = usuario.generate_otp()
-                    if usuario.metodo_verificacion == 'email':
-                        send_email(email, 'Verificación', f'Tu código: {otp}')
-                    elif usuario.metodo_verificacion == 'sms' and usuario.telefono:
-                        send_sms(decrypt(usuario.telefono), f'Código: {otp}')
+                    otp_code = usuario.generate_otp()
 
-                    session['user_email'] = email
+                    if usuario.metodo_verificacion == 'email':
+                        send_email(email, 'Verificación', f'Tu código: {otp_code}')
+                    elif usuario.metodo_verificacion == 'sms' and usuario.telefono:
+                        telefono_desencriptado = usuario.get_telefono_desencriptado()
+                        send_sms(telefono_desencriptado, f'Código: {otp_code}')
+
+                    session['user_email'] = email  # Email sin encriptar
                     return jsonify({
                         'success': True,
                         'message': 'Verificación requerida',
@@ -239,8 +175,10 @@ class AuthController:
 
                 # Login exitoso
                 session['user_id'] = usuario.id
-                session['user_email'] = email
+                session['user_email'] = email  # Email sin encriptar
                 session['user_role'] = usuario.rol_id
+                
+                # Actualizar último login
                 usuario.update_login_timestamp()
 
                 redirect_url = {
