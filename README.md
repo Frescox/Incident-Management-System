@@ -16,6 +16,12 @@ Sistema de gestión de incidencias desarrollado con Flask y MySQL (XAMPP).
    cd Incident-Management-System
    ```
 
+2. **Crea un ambiente virtual**:
+   ```bash
+   python -m venv venv
+   .\venv\Scripts\activate
+   ```
+
 2. **Instala dependencias**:
    ```bash
    pip install -r requirements.txt
