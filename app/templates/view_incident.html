@@ -144,33 +144,44 @@
           </div>
         </div>
 
-        <!-- Sección de comentarios -->
         <div class="comments-section">
           <h5 class="section-title">
             <i class="bi bi-chat-left-text me-1"></i> Comentarios
           </h5>
 
-          {% if not incidencia.comentarios %}
+          {% if not comentarios %}
           <div class="alert alert-info">
             <i class="bi bi-info-circle me-2"></i> No hay comentarios para esta
             incidencia.
           </div>
           {% else %}
           <div class="comments-container">
-            {% for comentario in incidencia.comentarios %}
+            {% set nombre_usuario = comentarios[0].usuario.nombre if comentarios[0].usuario else None %}
+            {% set apellido_usuario = comentarios[0].usuario.apellido if comentarios[0].usuario else None %}
+            
+            {% if nombre_usuario and apellido_usuario %}
+                {% set nombre_descifrado = nombre_usuario %}
+                {% set apellido_descifrado = apellido_usuario %}
+            {% else %}
+                {% set nombre_descifrado = 'Desconocido' %}
+                {% set apellido_descifrado = '' %}
+            {% endif %}
+          
+            {% for comentario in comentarios %}
             <div class="comment">
               <div class="comment-header">
                 <div class="d-flex justify-content-between align-items-center">
                   <div class="comment-author">
                     <i class="bi bi-person-circle me-1"></i>
-                    <strong
-                      >{{ comentario.usuario.nombre }} {{
-                      comentario.usuario.apellido }}</strong
-                    >
+                    <strong>{{ nombre_descifrado }} {{ apellido_descifrado }} (Tú)</strong>
                   </div>
                   <small class="">
                     <i class="bi bi-clock me-1"></i>
-                    {{ comentario.created_at.strftime('%d/%m/%Y %H:%M') }}
+                    {% if comentario.fecha_creacion %}
+                        {{ comentario.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
+                    {% else %}
+                        Fecha no disponible
+                    {% endif %}
                   </small>
                 </div>
               </div>
