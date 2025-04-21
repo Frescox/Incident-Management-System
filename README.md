@@ -67,3 +67,9 @@ o de esta otra:
 ```
 http://127.0.0.1:5000
 ```
+
+# Credenciales para el admin
+
+## Correo: admin@sistema.com
+
+## passd:  adminsistema
