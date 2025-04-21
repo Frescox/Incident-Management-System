@@ -45,20 +45,6 @@ Si necesitas cambiar credenciales, edita `config.py`:
     SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://usuario:contraseña@localhost/sistema_incidencias'
 ```
 
-## 🔍 Probar la conexión a la base de datos
-
-Ejecuta el script de prueba:
-
-```bash
-python test/test_db.py
-```
-
-Si todo va bien, deberías ver:
-
-```
-¡Conexión exitosa a la base de datos!
-```
-
 ## 🏃 Ejecutar la aplicación
 
 ```bash
