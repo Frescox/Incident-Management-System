@@ -123,12 +123,6 @@ class AuthController:
     def login():
         if request.method == 'POST':
             try:
-
-                if 'user_email' in session:
-                    return jsonify({
-                        'success': False,
-                        'message': 'Existe una cuenta logeada en la sesión'
-                    }), 400
             
                 data = request.get_json() if request.is_json else request.form
                 email = data.get('email')
@@ -175,7 +169,7 @@ class AuthController:
 
                 # Login exitoso
                 session['user_id'] = usuario.id
-                session['user_email'] = email  # Email sin encriptar
+                session['user_email'] = email 
                 session['user_role'] = usuario.rol_id
                 
                 # Actualizar último login
