@@ -1,336 +1,290 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sistema de Gestión de Incidencias</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        .auth-container {
-            max-width: 450px;
-            margin: 50px auto;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            background-color: #fff;
-        }
-        .auth-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .nav-tabs {
-            margin-bottom: 20px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        .auth-footer {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 0.9rem;
-        }
-        .verification-container {
-            display: none;
-        }
-        #telefono-container {
-            display: none;
-        }
-    </style>
-</head>
-<body>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" />
+      <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}" />
+  <body>
     <div class="container">
-        <div class="auth-container">
-            <div class="auth-header">
-                <h2>Sistema de Gestión de Incidencias</h2>
-            </div>
-            
-            <!-- Pestañas de Navegación -->
-            <ul class="nav nav-tabs" id="authTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login-pane" type="button" role="tab" aria-controls="login-pane" aria-selected="true">Iniciar Sesión</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register-pane" type="button" role="tab" aria-controls="register-pane" aria-selected="false">Registrarse</button>
-                </li>
-            </ul>
-            
-            <!-- Contenido de las Pestañas -->
-            <div class="tab-content" id="authTabsContent">
-                <!-- Panel de Inicio de Sesión -->
-                <div class="tab-pane fade show active" id="login-pane" role="tabpanel" aria-labelledby="login-tab">
-                    <form id="login-form">
-                        <div class="form-group">
-                            <label for="login-email">Correo Electrónico</label>
-                            <input type="email" class="form-control" id="login-email" name="email" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="login-password">Contraseña</label>
-                            <input type="password" class="form-control" id="login-password" name="password" required>
-                        </div>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
-                        </div>
-                    </form>
-                </div>
-                
-                <!-- Panel de Registro -->
-                <div class="tab-pane fade" id="register-pane" role="tabpanel" aria-labelledby="register-tab">
-                    <form id="register-form">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="reg-nombre">Nombre</label>
-                                    <input type="text" class="form-control" id="reg-nombre" name="nombre" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="reg-apellido">Apellido</label>
-                                    <input type="text" class="form-control" id="reg-apellido" name="apellido" required>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="reg-email">Correo Electrónico</label>
-                            <input type="email" class="form-control" id="reg-email" name="email" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="reg-password">Contraseña</label>
-                            <input type="password" class="form-control" id="reg-password" name="password" required>
-                        </div>
-                        <div class="form-group">
-                            <label>¿Cómo prefieres recibir el código de verificación?</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="metodo_verificacion" id="metodo-email" value="email" checked>
-                                <label class="form-check-label" for="metodo-email">
-                                    Correo Electrónico
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="metodo_verificacion" id="metodo-sms" value="sms">
-                                <label class="form-check-label" for="metodo-sms">
-                                    SMS
-                                </label>
-                            </div>
-                        </div>
-                        <div class="form-group" id="telefono-container">
-                            <label for="reg-telefono">Número de Teléfono</label>
-                            <input type="tel" class="form-control" id="reg-telefono" name="telefono" placeholder="+1234567890">
-                            <small class="form-text text-muted">Formato: +[código de país][número]</small>
-                        </div>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">Registrarse</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            
-            <!-- Panel de Verificación OTP -->
-            <div class="verification-container" id="otp-verification">
-                <h4 class="text-center mb-4">Verificación de Cuenta</h4>
-                <p class="text-center">Hemos enviado un código de verificación a tu método de contacto seleccionado.</p>
-                <form id="otp-form">
-                    <div class="form-group">
-                        <label for="otp-code">Código de Verificación</label>
-                        <input type="text" class="form-control" id="otp-code" name="otp" required>
-                    </div>
-                    <div class="d-grid mb-3">
-                        <button type="submit" class="btn btn-primary">Verificar</button>
-                    </div>
-                    <div class="text-center">
-                        <button type="button" class="btn btn-link" id="back-to-form">Volver al formulario</button>
-                    </div>
-                </form>
-            </div>
-            
-            <!-- Mensajes de Alerta -->
-            <div class="alert alert-danger mt-3" id="error-message" style="display: none;"></div>
-            <div class="alert alert-success mt-3" id="success-message" style="display: none;"></div>
-            
-            <div class="auth-footer">
-                <p>&copy; 2025 Sistema de Gestión de Incidencias</p>
-            </div>
+      <div class="auth-container container-card">
+        <div class="auth-header text-center mb-4">
+          <h2 class="section-title">Sistema de Gestión de Incidencias</h2>
         </div>
-    </div>
 
+        <!-- Pestañas de Navegación -->
+        <ul class="nav nav-tabs" id="authTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button
+              class="nav-link active"
+              id="login-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#login-pane"
+              type="button"
+              role="tab"
+              aria-controls="login-pane"
+              aria-selected="true">
+              Iniciar Sesión
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button
+              class="nav-link"
+              id="register-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#register-pane"
+              type="button"
+              role="tab"
+              aria-controls="register-pane"
+              aria-selected="false">
+              Registrarse
+            </button>
+          </li>
+        </ul>
+
+        <!-- Contenido de las Pestañas -->
+        <div class="tab-content py-4" id="authTabsContent">
+          <!-- Panel de Inicio de Sesión -->
+          <div
+            class="tab-pane fade show active"
+            id="login-pane"
+            role="tabpanel"
+            aria-labelledby="login-tab">
+            <form id="login-form">
+              <div class="mb-3">
+                <label for="login-email" class="form-label"
+                  >Correo Electrónico</label
+                >
+                <input
+                  type="email"
+                  class="form-control"
+                  id="login-email"
+                  name="email"
+                  required />
+              </div>
+              <div class="mb-3">
+                <label for="login-password" class="form-label"
+                  >Contraseña</label
+                >
+                <input
+                  type="password"
+                  class="form-control"
+                  id="login-password"
+                  name="password"
+                  required />
+              </div>
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary">
+                  Iniciar Sesión
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Panel de Registro -->
+          <div
+            class="tab-pane fade"
+            id="register-pane"
+            role="tabpanel"
+            aria-labelledby="register-tab">
+            <form id="register-form">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="reg-nombre" class="form-label">Nombre</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="reg-nombre"
+                      name="nombre"
+                      required />
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="reg-apellido" class="form-label"
+                      >Apellido</label
+                    >
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="reg-apellido"
+                      name="apellido"
+                      required />
+                  </div>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="reg-email" class="form-label"
+                  >Correo Electrónico</label
+                >
+                <input
+                  type="email"
+                  class="form-control"
+                  id="reg-email"
+                  name="email"
+                  required />
+              </div>
+              <div class="mb-3">
+                <label for="reg-password" class="form-label">Contraseña</label>
+                <input
+                  type="password"
+                  class="form-control"
+                  id="reg-password"
+                  name="password"
+                  required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label"
+                  >¿Cómo prefieres recibir el código de verificación?</label
+                >
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="metodo_verificacion"
+                    id="metodo-email"
+                    value="email"
+                    checked />
+                  <label class="form-check-label" for="metodo-email">
+                    Correo Electrónico
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="metodo_verificacion"
+                    id="metodo-sms"
+                    value="sms" />
+                  <label class="form-check-label" for="metodo-sms"> SMS </label>
+                </div>
+              </div>
+              <div class="mb-3" id="telefono-container" style="display: none">
+                <label for="reg-telefono" class="form-label"
+                  >Número de Teléfono</label
+                >
+                <input
+                  type="tel"
+                  class="form-control"
+                  id="reg-telefono"
+                  name="telefono"
+                  placeholder="+1234567890" />
+                <small class="form-text"
+                  >Formato: +[código de país][número]</small
+                >
+              </div>
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary">
+                  Registrarse
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Panel de Verificación OTP -->
+        <div
+          class="verification-container container-card text-center"
+          id="otp-verification"
+          style="display: none">
+          <h4 class="section-title mb-4">Verificación de Cuenta</h4>
+          <p class="mb-4">
+            Hemos enviado un código de verificación a tu método de contacto
+            seleccionado.
+          </p>
+          <form id="otp-form">
+            <div class="mb-3">
+              <label for="otp-code" class="form-label"
+                >Código de Verificación</label
+              >
+              <input
+                type="text"
+                class="form-control"
+                id="otp-code"
+                name="otp"
+                required />
+            </div>
+            <div class="d-grid mb-3">
+              <button type="submit" class="btn btn-primary">Verificar</button>
+            </div>
+            <div class="text-center">
+              <button type="button" class="btn btn-link" id="back-to-form">
+                Volver al formulario
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Mensajes de Alerta -->
+        <div
+          class="alert alert-danger mt-3"
+          id="error-message"
+          style="display: none"></div>
+        <div
+          class="alert alert-success mt-3"
+          id="success-message"
+          style="display: none"></div>
+
+        <div class="auth-footer text-center mt-4">
+          <p>&copy; 2025 Sistema de Gestión de Incidencias</p>
+        </div>
+      </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Referencias a elementos DOM
-            const loginForm = document.getElementById('login-form');
-            const registerForm = document.getElementById('register-form');
-            const otpForm = document.getElementById('otp-form');
-            const backButton = document.getElementById('back-to-form');
-            const errorMessage = document.getElementById('error-message');
-            const successMessage = document.getElementById('success-message');
-            const verificacionContainer = document.getElementById('otp-verification');
-            const authTabsContent = document.getElementById('authTabsContent');
-            const telefonoContainer = document.getElementById('telefono-container');
-            const metodoSMS = document.getElementById('metodo-sms');
-            const metodoEmail = document.getElementById('metodo-email');
-            
-            // Mostrar/ocultar el campo de teléfono según el método de verificación
-            metodoSMS.addEventListener('change', function() {
-                if (this.checked) {
-                    telefonoContainer.style.display = 'block';
-                    document.getElementById('reg-telefono').setAttribute('required', 'required');
-                }
-            });
-            
-            metodoEmail.addEventListener('change', function() {
-                if (this.checked) {
-                    telefonoContainer.style.display = 'none';
-                    document.getElementById('reg-telefono').removeAttribute('required');
-                }
-            });
-            
-            // Función para mostrar mensajes de error
-            function showError(message) {
-                errorMessage.textContent = message;
-                errorMessage.style.display = 'block';
-                successMessage.style.display = 'none';
-                
-                // Ocultar después de 5 segundos
-                setTimeout(() => {
-                    errorMessage.style.display = 'none';
-                }, 5000);
-            }
-            
-            // Función para mostrar mensajes de éxito
-            function showSuccess(message) {
-                successMessage.textContent = message;
-                successMessage.style.display = 'block';
-                errorMessage.style.display = 'none';
-                
-                // Ocultar después de 5 segundos
-                setTimeout(() => {
-                    successMessage.style.display = 'none';
-                }, 5000);
-            }
-            
-            // Función para mostrar el panel de verificación OTP
-            function showVerificationPanel() {
-                authTabsContent.style.display = 'none';
-                verificacionContainer.style.display = 'block';
-            }
-            
-            // Función para volver al formulario principal
-            function showMainPanel() {
-                authTabsContent.style.display = 'block';
-                verificacionContainer.style.display = 'none';
-            }
-            
-            // Evento para volver al formulario principal
-            backButton.addEventListener('click', showMainPanel);
-            
-            // Manejar el envío del formulario de registro
-            registerForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // Validar que si se seleccionó SMS, se haya proporcionado un teléfono
-                if (metodoSMS.checked && !document.getElementById('reg-telefono').value) {
-                    showError('Por favor ingresa tu número de teléfono para verificación por SMS');
-                    return;
-                }
-                
-                // Recopilar datos del formulario
-                const formData = new FormData(this);
-                
-                // Enviar solicitud al servidor
-                fetch('/register', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showSuccess(data.message);
-                        if (data.show_otp_verification) {
-                            showVerificationPanel();
-                        }
-                        if (data.redirect) {
-                            setTimeout(() => {
-                                window.location.href = data.redirect;
-                            }, 2000);
-                        }
-                    } else {
-                        showError(data.message);
-                    }
-                })
-                .catch(error => {
-                    showError('Error al procesar tu solicitud. Inténtalo de nuevo más tarde.');
-                    console.error('Error:', error);
-                });
-            });
-            
-            // Manejar el envío del formulario de inicio de sesión
-            loginForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // Recopilar datos del formulario
-                const formData = new FormData(this);
-                
-                // Enviar solicitud al servidor
-                fetch('/login', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showSuccess(data.message);
-                        if (data.show_otp_verification) {
-                            showVerificationPanel();
-                        }
-                        if (data.redirect) {
-                            setTimeout(() => {
-                                window.location.href = data.redirect;
-                            }, 2000);
-                        }
-                    } else {
-                        showError(data.message);
-                    }
-                })
-                .catch(error => {
-                    showError('Error al procesar tu solicitud. Inténtalo de nuevo más tarde.');
-                    console.error('Error:', error);
-                });
-            });
-            
-            // Manejar el envío del formulario de verificación OTP
-            otpForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // Recopilar datos del formulario
-                const formData = new FormData(this);
-                
-                // Enviar solicitud al servidor
-                fetch('/verify_otp', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showSuccess(data.message);
-                        if (data.redirect) {
-                            setTimeout(() => {
-                                window.location.href = data.redirect;
-                            }, 2000);
-                        }
-                    } else {
-                        showError(data.message);
-                    }
-                })
-                .catch(error => {
-                    showError('Error al procesar tu solicitud. Inténtalo de nuevo más tarde.');
-                    console.error('Error:', error);
-                });
-            });
-        });
+    <script src="{{ url_for('static', filename='js/index.js') }}">
     </script>
-</body>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+
+  const metodoSMS = document.getElementById('metodo-sms');
+  const metodoEmail = document.getElementById('metodo-email');
+  const telefonoContainer = document.getElementById('telefono-container');
+  
+  if (metodoSMS && metodoEmail && telefonoContainer) {
+    metodoSMS.addEventListener('change', function() {
+      if (this.checked) {
+        telefonoContainer.style.display = 'block';
+        setTimeout(() => {
+          telefonoContainer.classList.add('show');
+        }, 10);
+      }
+    });
+    
+    metodoEmail.addEventListener('change', function() {
+      if (this.checked) {
+        telefonoContainer.classList.remove('show');
+        setTimeout(() => {
+          telefonoContainer.style.display = 'none';
+        }, 300);
+      }
+    });
+  }
+  
+  const backToFormBtn = document.getElementById('back-to-form');
+  const otpVerification = document.getElementById('otp-verification');
+  
+  if (backToFormBtn && otpVerification) {
+    backToFormBtn.addEventListener('click', function() {
+      otpVerification.classList.remove('show');
+      setTimeout(() => {
+        otpVerification.style.display = 'none';
+      }, 300);
+    });
+  }
+  
+  const authContainer = document.querySelector('.auth-container');
+  if (authContainer) {
+    authContainer.style.position = 'relative';
+    authContainer.style.overflow = 'hidden';
+  }
+});
+    </script>
+  </body>
 </html>
