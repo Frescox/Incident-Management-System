@@ -54,16 +54,22 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Función para mostrar el panel de verificación OTP
-  function showVerificationPanel() {
-    authTabsContent.style.display = "none";
-    verificacionContainer.style.display = "block";
-  }
+function showVerificationPanel() {
+  authTabsContent.style.display = "none";
+  verificacionContainer.style.display = "block";
+  setTimeout(() => {
+    verificacionContainer.classList.add("show");
+  }, 10);
+}
 
   // Función para volver al formulario principal
-  function showMainPanel() {
-    authTabsContent.style.display = "block";
+function showMainPanel() {
+  verificacionContainer.classList.remove("show");
+  setTimeout(() => {
     verificacionContainer.style.display = "none";
-  }
+    authTabsContent.style.display = "block";
+  }, 300);
+}
 
   // Evento para volver al formulario principal
   backButton.addEventListener("click", showMainPanel);
