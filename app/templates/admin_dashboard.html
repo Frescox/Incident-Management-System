@@ -7,375 +7,539 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/user-dashboard.css') }}">
 
     <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        .dashboard-container {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-        }
+        /* Additional admin-specific styles */
         .user-info {
-            background-color: #f1f8ff;
+            background-color: var(--card-bg);
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 20px;
+            border-left: 4px solid var(--accent-blue);
+            transition: var(--transition);
         }
-        .badge-new {
-            background-color: #0d6efd;
+        
+        .user-info:hover {
+            transform: translateX(2px);
+            box-shadow: var(--glow);
         }
-        .badge-in-progress {
-            background-color: #fd7e14;
-        }
-        .badge-resolved {
-            background-color: #198754;
-        }
-        .badge-closed {
-            background-color: #6c757d;
-        }
-        .priority-high {
-            border-left: 4px solid #dc3545;
-        }
-        .priority-medium {
-            border-left: 4px solid #ffc107;
-        }
-        .priority-low {
-            border-left: 4px solid #0dcaf0;
-        }
+
         .flashed-messages {
             position: fixed;
             top: 20px;
             right: 20px;
             z-index: 1000;
         }
-        .table-responsive {
-            margin-top: 20px;
+
+        .modal-content {
+            background-color: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
         }
-        .badge-active {
-            background-color: #198754;
+        
+        .modal-header {
+            border-bottom: 1px solid var(--border-color);
         }
-        .badge-inactive {
-            background-color: #dc3545;
+        
+        .modal-title {
+            color: var(--text-primary);
         }
-        .form-select-sm {
-            width: auto;
-            display: inline-block;
+        
+        .modal-body {
+            color: var(--text-secondary);
+        }
+        
+        .modal-footer {
+            border-top: 1px solid var(--border-color);
+        }
+        
+        pre {
+            background-color: var(--input-bg);
+            color: var(--text-secondary);
+            border-radius: 6px;
         }
     </style>
 </head>
 <body>
-    <!-- Mensajes Flash -->
-    <div class="flashed-messages">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <!-- Header -->
+    <header class="main-header">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <h2 class="logo-text me-4">SGI</h2>
+                        <div class="user-welcome">
+                            <h4 class="mb-0">Bienvenido, {{ nombre }} {{ apellido }}</h4>
+                            <p class="mb-0">{{ correo }}</p>
+                        </div>
                     </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+                </div>
+                <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                    <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#modalReporteGeneral">
+                        <i class="bi bi-pie-chart-fill me-1"></i> Ver Reporte General
+                    </button>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger ms-2">
+                        <i class="bi bi-box-arrow-right me-1"></i> Cerrar sesión
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mensajes Flash -->
+    <div class="flash-bg container-fluid mt-3">
+        <div class="row">
+            <div class="col">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+        </div>
     </div>
 
-    <div class="dashboard-container">
-        <div class="user-info d-flex justify-content-between align-items-center">
-            <div>
-                <h2>Bienvenido, {{ nombre }} {{ apellido }}</h2>
-                <p class="mb-0">Correo: {{ correo }}</p>
-            </div>
-            <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">
-                <i class="bi bi-box-arrow-right"></i> Cerrar sesión
-            </a>
-        </div>
-
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="mb-0">Todas las Incidencias</h3>
-            <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#modalReporteGeneral">
-                <i class="bi bi-pie-chart-fill"></i> Ver Reporte General
-            </button>
-        </div>
-        
-        {% if not incidencias %}
-        <div class="alert alert-info">
-            No hay incidencias registradas.
-        </div>
-        {% else %}
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead class="table-light">
-                    <tr>
-                        <th>ID</th>
-                        <th>Título</th>
-                        <th>Categoría</th>
-                        <th>Prioridad</th>
-                        <th>Estado</th>
-                        <th>Fecha</th>
-                        <th>Usuario</th>
-                        <th>Agente</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for i in incidencias %}
-                    <tr class="align-middle 
-                        {% if i.prioridad_nombre.lower() == 'alta' %}priority-high
-                        {% elif i.prioridad_nombre.lower() == 'media' %}priority-medium
-                        {% else %}priority-low{% endif %}">
-                        <td>{{ i.id }}</td>
-                        <td>{{ i.titulo }}</td>
-                        <td>{{ i.categoria_nombre }}</td>
-                        <td>{{ i.prioridad_nombre|capitalize }}</td>
-                        <td>
-                            <span class="badge 
-                                {% if i.estado_nombre.lower() == 'nuevo' %}badge-new
-                                {% elif i.estado_nombre.lower() == 'en progreso' %}badge-in-progress
-                                {% elif i.estado_nombre.lower() == 'resuelto' %}badge-resolved
-                                {% else %}badge-closed{% endif %}">
-                                {{ i.estado_nombre|title }}
-                            </span>
-                        </td>
-                        <td>{{ i.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</td>
-                        <td>{{ i.creador_nombre }} {{ i.creador_apellido }}</td>
-                        <td>
-                            {% if i.agente_nombre %}
-                                {{ i.agente_nombre }} {{ i.agente_apellido }}
-                            {% else %}
-                                <span class="text-muted">Sin agente</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <a href="{{ url_for('admin.view_incident', incident_id=i.id) }}" class="btn btn-sm btn-outline-primary" title="Ver">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            <button type="button" class="btn btn-sm btn-outline-secondary"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalLogIncidencia{{ i.id }}"
-                                    title="Ver Logs de Incidencia">
-                                <i class="bi bi-clipboard-data"></i>
-                            </button>
-                        </td>
-                        
-                        
-                    </tr>
-                    {% endfor %}
-                    
-                </tbody>
-                    {% for i in incidencias %}
-                    <div class="modal fade" id="modalLogIncidencia{{ i.id }}" tabindex="-1" aria-labelledby="modalLogIncidenciaLabel{{ i.id }}" aria-hidden="true">
-                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="modalLogIncidenciaLabel{{ i.id }}">
-                                Logs de la incidencia #{{ i.id }}: "{{ i.titulo }}"
-                            </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                        </div>
-                        <div class="modal-body">
-                        {% for log in i.logs %}
-                        <pre class="bg-light p-2 rounded small mb-2">
-                    [{{ log.created_at.strftime('%d/%m/%Y %H:%M:%S') }}] 
-                    {{ log.usuario_nombre }} realizó acción '{{ log.accion }}' sobre {{ log.entidad }} #{{ log.entidad_id }}:
-                    {{ log.detalles }}
-                        </pre>
-                        {% else %}
-                        <p class="text-muted">No hay logs disponibles para esta incidencia.</p>
-                        {% endfor %}
-                        </div>
-                    </div>
-                    </div>
-                    </div>
-                    {% endfor %}
-            </table>
-        </div>
-        {% endif %}
-
-        <!-- Sección de Usuarios -->
-        <!-- Solo la sección de usuarios del dashboard -->
-        <div class="mt-5">
-            <h3>Usuarios Registrados</h3>
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Sidebar with stats -->
+        <aside class="sidebar">
+            <h3 class="sidebar-title">Estadísticas</h3>
             
-            {% if not usuarios %}
-            <div class="alert alert-info">
-                No hay usuarios registrados.
+            <div class="stat-item">
+                <div class="stat-value">
+                    {{ incidencias|selectattr('estado_nombre', 'equalto', 'nuevo')|list|length }}
+                </div>
+                <div class="stat-label">Nuevas Incidencias</div>
             </div>
-            {% else %}
-            <div class="table-responsive mt-3">
-                <table class="table table-hover">
-                    <thead class="table-light">
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Apellido</th>
-                            <th>Correo</th>
-                            <th>Rol Actual</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for usuario in usuarios %}
-                        <tr>
-                            <td>{{ usuario.id }}</td>
-                            <td>{{ usuario.nombre }}</td>
-                            <td>{{ usuario.apellido }}</td>
-                            <td>{{ usuario.email }}</td>
-                            <td>{{ usuario.rol_nombre }}</td>
-                            <td>
-                                <span class="badge {% if usuario.estado %}bg-success{% else %}bg-danger{% endif %}">
-                                    {% if usuario.estado %}Activo{% else %}Inactivo{% endif %}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="d-flex gap-2">
-                                    <form method="POST" action="{{ url_for('admin.update_user_role', user_id=usuario.id) }}" class="d-flex">
-                                        <select name="rol_id" class="form-select form-select-sm me-2" required>
-                                            {% for rol in roles %}
-                                            <option value="{{ rol.id }}" {% if rol.id == usuario.rol_id %}selected{% endif %}>
-                                                {{ rol.nombre }}
-                                            </option>
-                                            {% endfor %}
-                                        </select>
-                                        <button type="submit" class="btn btn-sm btn-primary">Cambiar Rol</button>
-                                    </form>
-                                    <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=usuario.id) }}" class="ms-2">
-                                        <button type="submit" class="btn btn-sm {% if usuario.estado %}btn-warning{% else %}btn-success{% endif %}">
-                                            {% if usuario.estado %}Desactivar{% else %}Activar{% endif %}
+
+            <div class="stat-item">
+                <div class="stat-value">
+                    {{ incidencias|selectattr('estado_nombre', 'equalto', 'en_progreso')|list|length }}
+                </div>
+                <div class="stat-label">En Progreso</div>
+            </div>
+
+            <div class="stat-item">
+                <div class="stat-value">
+                    {{ incidencias|selectattr('estado_nombre', 'equalto', 'resuelto')|list|length }}
+                </div>
+                <div class="stat-label">Resueltas</div>
+            </div>
+
+            <div class="stat-item">
+                <div class="stat-value">
+                    {{ incidencias|selectattr('estado_nombre', 'equalto', 'cerrado')|list|length }}
+                </div>
+                <div class="stat-label">Cerradas</div>
+            </div>
+
+            <div class="stat-item">
+                <div class="stat-value">{{ incidencias|length }}</div>
+                <div class="stat-label">Total Incidencias</div>
+            </div>
+
+            <div class="stat-item">
+                <div class="stat-value">{{ usuarios|length }}</div>
+                <div class="stat-label">Usuarios Registrados</div>
+            </div>
+        </aside>
+
+        <!-- Main area with tables -->
+        <main class="content-area">
+            <div class="table-container">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="section-title m-0">Todas las Incidencias</h3>
+                    <div class="d-flex">
+                        <div class="input-group me-2" style="max-width: 300px">
+                            <input type="text" class="form-control" placeholder="Buscar..." id="searchIncidents">
+                            <button class="btn btn-outline-primary" type="button">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-primary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-funnel me-1"></i> Filtrar
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="filterDropdown" style="background-color: var(--card-bg); border-color: var(--border-color);">
+                                <li><a class="dropdown-item" href="#" style="color: var(--text-primary)">Todas</a></li>
+                                <li><a class="dropdown-item" href="#" style="color: var(--text-primary)">Nuevas</a></li>
+                                <li><a class="dropdown-item" href="#" style="color: var(--text-primary)">En Progreso</a></li>
+                                <li><a class="dropdown-item" href="#" style="color: var(--text-primary)">Resueltas</a></li>
+                                <li><a class="dropdown-item" href="#" style="color: var(--text-primary)">Cerradas</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if not incidencias %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i> No hay incidencias registradas.
+                </div>
+                {% else %}
+                <div class="table-responsive rounded">
+                    <table class="table table-hover">
+                        <thead class="table-color">
+                            <tr>
+                                <th class="py-3">ID</th>
+                                <th class="py-3">Título</th>
+                                <th class="py-3">Categoría</th>
+                                <th class="py-3">Prioridad</th>
+                                <th class="py-3">Estado</th>
+                                <th class="py-3">Fecha</th>
+                                <th class="py-3">Usuario</th>
+                                <th class="py-3">Agente</th>
+                                <th class="py-3 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="table-color">
+                            {% for i in incidencias %}
+                            <tr class="align-middle table-row {% if i.prioridad_nombre.lower() == 'alta' %}priority-high{% elif i.prioridad_nombre.lower() == 'media' %}priority-medium{% else %}priority-low{% endif %}">
+                                <td class="py-3">{{ i.id }}</td>
+                                <td class="py-3 fw-medium">{{ i.titulo }}</td>
+                                <td class="py-3">{{ i.categoria_nombre }}</td>
+                                <td class="py-3">
+                                    <span class="priority-indicator {% if i.prioridad_nombre.lower() == 'alta' %}priority-high-dot{% elif i.prioridad_nombre.lower() == 'media' %}priority-medium-dot{% else %}priority-low-dot{% endif %} me-2"></span>
+                                    {{ i.prioridad_nombre|capitalize }}
+                                </td>
+                                <td class="py-3">
+                                    <span class="badge rounded-pill {% if i.estado_nombre.lower() == 'nuevo' %}badge-new{% elif i.estado_nombre.lower() == 'en progreso' %}badge-in-progress{% elif i.estado_nombre.lower() == 'resuelto' %}badge-resolved{% else %}badge-closed{% endif %}">
+                                        {{ i.estado_nombre|title }}
+                                    </span>
+                                </td>
+                                <td class="py-3">{{ i.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td class="py-3">{{ i.creador_nombre }} {{ i.creador_apellido }}</td>
+                                <td class="py-3">
+                                    {% if i.agente_nombre %}
+                                        {{ i.agente_nombre }} {{ i.agente_apellido }}
+                                    {% else %}
+                                        <span class="text-muted">Sin agente</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3 text-center">
+                                    <div class="btn-group shadow-sm">
+                                        <a href="{{ url_for('admin.view_incident', incident_id=i.id) }}" class="btn btn-sm btn-outline-primary" title="Ver">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalLogIncidencia{{ i.id }}" title="Ver Logs de Incidencia">
+                                            <i class="bi bi-clipboard-data"></i>
                                         </button>
-                                    </form>
-                                            <button type="button" class="btn btn-sm btn-dark"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#modalLogUsuario{{ usuario.id }}"
-                                            title="Ver Logs de Usuario">
-                                        <i class="bi bi-clock-history"></i>
-                                    </button>
-                            
-                                </div>
-                            </td>
-                            
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                    {% for usuario in usuarios %}
-                    <div class="modal fade" id="modalLogUsuario{{ usuario.id }}" tabindex="-1" aria-labelledby="modalLogUsuarioLabel{{ usuario.id }}" aria-hidden="true">
-                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                        <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="modalLogUsuarioLabel{{ usuario.id }}">
-                            Logs del usuario     {{ usuario.nombre }} {{ usuario.apellido }}
-                            </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                        </div>
-                        <div class="modal-body">
-                            {% if usuario.logs %}
-                            {% for log in usuario.logs %}
-                            <pre class="bg-light p-2 rounded small mb-2">
-                            [{{ log.created_at.strftime('%d/%m/%Y %H:%M:%S') }}]
-                            {{ log.usuario_nombre }} realizó acción '{{ log.accion }}' sobre {{ log.entidad }} #{{ log.entidad_id }}:
-                            {{ log.detalles }}
-                            </pre>
+                                    </div>
+                                </td>
+                            </tr>
                             {% endfor %}
-                            {% else %}
-                            <p class="text-muted">No hay logs disponibles para este usuario.</p>
-                            {% endif %}
-                        </div>
-                        </div>
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+
+                <!-- Sección de Usuarios -->
+                <div class="mt-5">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="section-title m-0">Usuarios Registrados</h3>
                     </div>
+                    
+                    {% if not usuarios %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i> No hay usuarios registrados.
                     </div>
-                    {% endfor %}
-                </table>
+                    {% else %}
+                    <div class="table-responsive rounded">
+                        <table class="table table-hover">
+                            <thead class="table-color">
+                                <tr>
+                                    <th class="py-3">ID</th>
+                                    <th class="py-3">Nombre</th>
+                                    <th class="py-3">Apellido</th>
+                                    <th class="py-3">Correo</th>
+                                    <th class="py-3">Rol Actual</th>
+                                    <th class="py-3">Estado</th>
+                                    <th class="py-3 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-color">
+                                {% for usuario in usuarios %}
+                                <tr class="align-middle table-row">
+                                    <td class="py-3">{{ usuario.id }}</td>
+                                    <td class="py-3 fw-medium">{{ usuario.nombre }}</td>
+                                    <td class="py-3">{{ usuario.apellido }}</td>
+                                    <td class="py-3">{{ usuario.email }}</td>
+                                    <td class="py-3">{{ usuario.rol_nombre }}</td>
+                                    <td class="py-3">
+                                        <span class="badge rounded-pill {% if usuario.estado %}badge-active{% else %}badge-inactive{% endif %}">
+                                            {% if usuario.estado %}Activo{% else %}Inactivo{% endif %}
+                                        </span>
+                                    </td>
+                                    <td class="py-3 text-center">
+                                        <div class="d-flex gap-2 justify-content-center">
+                                            <form method="POST" action="{{ url_for('admin.update_user_role', user_id=usuario.id) }}" class="d-flex">
+                                                <select name="rol_id" class="form-select form-select-sm me-2" required>
+                                                    {% for rol in roles %}
+                                                    <option value="{{ rol.id }}" {% if rol.id == usuario.rol_id %}selected{% endif %}>
+                                                        {{ rol.nombre }}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                                <button type="submit" class="btn btn-sm btn-primary">Cambiar Rol</button>
+                                            </form>
+                                            <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=usuario.id) }}" class="ms-2">
+                                                <button type="submit" class="btn btn-sm {% if usuario.estado %}btn-warning{% else %}btn-success{% endif %}">
+                                                    {% if usuario.estado %}Desactivar{% else %}Activar{% endif %}
+                                                </button>
+                                            </form>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalLogUsuario{{ usuario.id }}" title="Ver Logs de Usuario">
+                                                <i class="bi bi-clock-history"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
-            {% endif %}
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="page-footer">
+        <p class="m-0">&copy; 2025 Sistema de Gestión de Incidencias</p>
+    </footer>
+
+    <!-- Modales de logs de incidencia -->
+    {% for i in incidencias %}
+    <div class="modal fade" id="modalLogIncidencia{{ i.id }}" tabindex="-1" aria-labelledby="modalLogIncidenciaLabel{{ i.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalLogIncidenciaLabel{{ i.id }}">
+                        Logs de la incidencia #{{ i.id }}: "{{ i.titulo }}"
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                {% for log in i.logs %}
+                <pre class="p-2 rounded small mb-2">
+[{{ log.created_at.strftime('%d/%m/%Y %H:%M:%S') }}] 
+{{ log.usuario_nombre }} realizó acción '{{ log.accion }}' sobre {{ log.entidad }} #{{ log.entidad_id }}:
+{{ log.detalles }}
+                </pre>
+                {% else %}
+                <p class="text-muted">No hay logs disponibles para esta incidencia.</p>
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Modales de logs de usuario -->
+    {% for usuario in usuarios %}
+    <div class="modal fade" id="modalLogUsuario{{ usuario.id }}" tabindex="-1" aria-labelledby="modalLogUsuarioLabel{{ usuario.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalLogUsuarioLabel{{ usuario.id }}">
+                        Logs del usuario {{ usuario.nombre }} {{ usuario.apellido }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    {% if usuario.logs %}
+                    {% for log in usuario.logs %}
+                    <pre class="p-2 rounded small mb-2">
+[{{ log.created_at.strftime('%d/%m/%Y %H:%M:%S') }}]
+{{ log.usuario_nombre }} realizó acción '{{ log.accion }}' sobre {{ log.entidad }} #{{ log.entidad_id }}:
+{{ log.detalles }}
+                    </pre>
+                    {% endfor %}
+                    {% else %}
+                    <p class="text-muted">No hay logs disponibles para este usuario.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Modal: Reporte General -->
+    <div class="modal fade" id="modalReporteGeneral" tabindex="-1" aria-labelledby="modalReporteGeneralLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalReporteGeneralLabel">Reporte General de Incidencias</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row" style="height: 600px;">
+                        <div class="col-md-6 d-flex align-items-center justify-content-center">
+                            <canvas id="graficaEstados" style="max-height: 90%; max-width: 100%;"></canvas>
+                        </div>
+                
+                        <div class="col-md-6 d-flex flex-column justify-content-between">
+                            <div class="d-flex align-items-center justify-content-center mb-3" style="flex: 1;">
+                                <canvas id="graficaCategorias" style="max-height: 90%; max-width: 90%;"></canvas>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-center mb-3" style="flex: 1;">
+                                <canvas id="graficaPrioridades" style="max-height: 90%; max-width: 90%;"></canvas>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-center" style="flex: 1;">
+                                <canvas id="graficaUsuariosAgentes" style="max-height: 90%; max-width: 90%;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Cerrar automáticamente los mensajes flash después de 5 segundos
         setTimeout(() => {
             document.querySelectorAll('.alert').forEach(alert => {
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
+                const bsAlert = bootstrap.Alert.getInstance(alert);
+                if (bsAlert) {
+                    bsAlert.close();
+                }
             });
         }, 5000);
+        
+        // Búsqueda de incidencias
+        document.getElementById('searchIncidents').addEventListener('keyup', function() {
+            const searchText = this.value.toLowerCase();
+            const rows = document.querySelectorAll('tbody tr');
+
+            rows.forEach(row => {
+                if (row.cells.length >= 3) {
+                    const title = row.cells[1].textContent.toLowerCase();
+                    const category = row.cells[2].textContent.toLowerCase();
+                    
+                    if (title.includes(searchText) || category.includes(searchText)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+        });
+        
+        document.addEventListener('DOMContentLoaded', function () {
+            const data = JSON.parse('{{ reporte | tojson | safe }}');
+        
+            new Chart(document.getElementById('graficaEstados'), {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(data.estados),
+                    datasets: [{ 
+                        data: Object.values(data.estados), 
+                        backgroundColor: ['#4a90e2', '#ffd43b', '#48c78e', '#8590a6'] 
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    plugins: { 
+                        title: { 
+                            display: true, 
+                            text: 'Incidencias por Estado',
+                            color: '#e6e9f0'
+                        },
+                        legend: {
+                            labels: {
+                                color: '#b0b8cc'
+                            }
+                        }
+                    } 
+                }
+            });
+        
+            new Chart(document.getElementById('graficaCategorias'), {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(data.categorias),
+                    datasets: [{ 
+                        data: Object.values(data.categorias), 
+                        backgroundColor: ['#ff6384', '#36a2eb', '#ffcd56', '#4bc0c0'] 
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    plugins: { 
+                        title: { 
+                            display: true, 
+                            text: 'Incidencias por Categoría',
+                            color: '#e6e9f0'
+                        },
+                        legend: {
+                            labels: {
+                                color: '#b0b8cc'
+                            }
+                        }
+                    } 
+                }
+            });
+        
+            new Chart(document.getElementById('graficaPrioridades'), {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(data.prioridades),
+                    datasets: [{ 
+                        data: Object.values(data.prioridades), 
+                        backgroundColor: ['#f14668', '#ffd43b', '#7cb9f5'] 
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    plugins: { 
+                        title: { 
+                            display: true, 
+                            text: 'Incidencias por Prioridad',
+                            color: '#e6e9f0'
+                        },
+                        legend: {
+                            labels: {
+                                color: '#b0b8cc'
+                            }
+                        }
+                    } 
+                }
+            });
+        
+            new Chart(document.getElementById('graficaUsuariosAgentes'), {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(data.usuarios_vs_agentes),
+                    datasets: [{ 
+                        data: Object.values(data.usuarios_vs_agentes), 
+                        backgroundColor: ['#48c78e', '#6610f2'] 
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    plugins: { 
+                        title: { 
+                            display: true, 
+                            text: 'Relación Usuarios vs Agentes',
+                            color: '#e6e9f0'
+                        },
+                        legend: {
+                            labels: {
+                                color: '#b0b8cc'
+                            }
+                        }
+                    } 
+                }
+            });
+        });
     </script>
-    <!-- Modal: Reporte General -->
-        <div class="modal fade" id="modalReporteGeneral" tabindex="-1" aria-labelledby="modalReporteGeneralLabel" aria-hidden="true">
-            <div class="modal-dialog modal-xl modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                <h5 class="modal-title" id="modalReporteGeneralLabel">Reporte General de Incidencias</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                <div class="row" style="height: 600px;">
-                    <div class="col-md-6 d-flex align-items-center justify-content-center">
-                    <canvas id="graficaEstados" style="max-height: 90%; max-width: 100%;"></canvas>
-                    </div>
-        
-                    <div class="col-md-6 d-flex flex-column justify-content-between">
-                    <div class="d-flex align-items-center justify-content-center mb-3" style="flex: 1;">
-                        <canvas id="graficaCategorias" style="max-height: 90%; max-width: 90%;"></canvas>
-                    </div>
-                    <div class="d-flex align-items-center justify-content-center mb-3" style="flex: 1;">
-                        <canvas id="graficaPrioridades" style="max-height: 90%; max-width: 90%;"></canvas>
-                    </div>
-                    <div class="d-flex align-items-center justify-content-center" style="flex: 1;">
-                        <canvas id="graficaUsuariosAgentes" style="max-height: 90%; max-width: 90%;"></canvas>
-                    </div>
-                    </div>
-                </div>
-                </div>
-            </div>
-            </div>
-        </div>
-        
-      
 </body>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const data = JSON.parse('{{ reporte | tojson | safe }}');
-    
-        new Chart(document.getElementById('graficaEstados'), {
-            type: 'pie',
-            data: {
-                labels: Object.keys(data.estados),
-                datasets: [{ data: Object.values(data.estados), backgroundColor: ['#0d6efd', '#fd7e14', '#198754', '#6c757d'] }]
-            },
-            options: { responsive: true, plugins: { title: { display: true, text: 'Incidencias por Estado' } } }
-        });
-    
-        new Chart(document.getElementById('graficaCategorias'), {
-            type: 'pie',
-            data: {
-                labels: Object.keys(data.categorias),
-                datasets: [{ data: Object.values(data.categorias), backgroundColor: ['#ff6384', '#36a2eb', '#ffcd56', '#4bc0c0'] }]
-            },
-            options: { responsive: true, plugins: { title: { display: true, text: 'Incidencias por Categoría' } } }
-        });
-    
-        new Chart(document.getElementById('graficaPrioridades'), {
-            type: 'pie',
-            data: {
-                labels: Object.keys(data.prioridades),
-                datasets: [{ data: Object.values(data.prioridades), backgroundColor: ['#dc3545', '#ffc107', '#0dcaf0'] }]
-            },
-            options: { responsive: true, plugins: { title: { display: true, text: 'Incidencias por Prioridad' } } }
-        });
-    
-        new Chart(document.getElementById('graficaUsuariosAgentes'), {
-            type: 'pie',
-            data: {
-                labels: Object.keys(data.usuarios_vs_agentes),
-                datasets: [{ data: Object.values(data.usuarios_vs_agentes), backgroundColor: ['#20c997', '#6610f2'] }]
-            },
-            options: { responsive: true, plugins: { title: { display: true, text: 'Relación Usuarios vs Agentes' } } }
-        });
-    });
-    </script>
-    
 </html>

@@ -8,7 +8,7 @@ from app.models.core import db  # Importa SQLAlchemy db
 
 def create_app():
     # Inicializar la aplicación Flask
-    app = Flask(__name__, template_folder='app/templates')
+    app = Flask(__name__, template_folder='app/templates', static_folder='app/static')
     
     # Cargar configuración
     app.config.from_object(config['default'])

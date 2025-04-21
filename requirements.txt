@@ -5,3 +5,5 @@ mysql_connector_repackaged==0.3.1
 pycryptodome==3.17
 python-dotenv==1.1.0
 twilio==8.3.0
+pymysql
+mysql-connector-python
