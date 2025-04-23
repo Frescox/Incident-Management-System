@@ -138,7 +138,11 @@
                   class="form-control"
                   id="reg-password"
                   name="password"
-                  required />
+                  required
+                  minlength="6"
+                  pattern="^[a-zA-Z0-9]{6,}"
+                  title="La contraseña debe tener al menos 6 caracteres, sin espacios."
+                  placeholder="Enter your password" />
               </div>
               <div class="mb-3">
                 <label class="form-label"
@@ -175,7 +179,10 @@
                   class="form-control"
                   id="reg-telefono"
                   name="telefono"
-                  placeholder="+1234567890" />
+                  placeholder="+1234567890"
+                  required
+                  pattern="^\+[0-9]{7,15}$"
+                  title="Solo se permite el signo + al inicio seguido de 7 a 15 números. No se aceptan espacios ni letras." />                    
                 <small class="form-text"
                   >Formato: +[código de país][número]</small
                 >
@@ -241,50 +248,50 @@
     <script src="{{ url_for('static', filename='js/index.js') }}">
     </script>
     <script>
-document.addEventListener('DOMContentLoaded', function() {
+      document.addEventListener('DOMContentLoaded', function() {
 
-  const metodoSMS = document.getElementById('metodo-sms');
-  const metodoEmail = document.getElementById('metodo-email');
-  const telefonoContainer = document.getElementById('telefono-container');
-  
-  if (metodoSMS && metodoEmail && telefonoContainer) {
-    metodoSMS.addEventListener('change', function() {
-      if (this.checked) {
-        telefonoContainer.style.display = 'block';
-        setTimeout(() => {
-          telefonoContainer.classList.add('show');
-        }, 10);
-      }
-    });
-    
-    metodoEmail.addEventListener('change', function() {
-      if (this.checked) {
-        telefonoContainer.classList.remove('show');
-        setTimeout(() => {
-          telefonoContainer.style.display = 'none';
-        }, 300);
-      }
-    });
-  }
-  
-  const backToFormBtn = document.getElementById('back-to-form');
-  const otpVerification = document.getElementById('otp-verification');
-  
-  if (backToFormBtn && otpVerification) {
-    backToFormBtn.addEventListener('click', function() {
-      otpVerification.classList.remove('show');
-      setTimeout(() => {
-        otpVerification.style.display = 'none';
-      }, 300);
-    });
-  }
-  
-  const authContainer = document.querySelector('.auth-container');
-  if (authContainer) {
-    authContainer.style.position = 'relative';
-    authContainer.style.overflow = 'hidden';
-  }
-});
+        const metodoSMS = document.getElementById('metodo-sms');
+        const metodoEmail = document.getElementById('metodo-email');
+        const telefonoContainer = document.getElementById('telefono-container');
+        
+        if (metodoSMS && metodoEmail && telefonoContainer) {
+          metodoSMS.addEventListener('change', function() {
+            if (this.checked) {
+              telefonoContainer.style.display = 'block';
+              setTimeout(() => {
+                telefonoContainer.classList.add('show');
+              }, 10);
+            }
+          });
+          
+          metodoEmail.addEventListener('change', function() {
+            if (this.checked) {
+              telefonoContainer.classList.remove('show');
+              setTimeout(() => {
+                telefonoContainer.style.display = 'none';
+              }, 300);
+            }
+          });
+        }
+        
+        const backToFormBtn = document.getElementById('back-to-form');
+        const otpVerification = document.getElementById('otp-verification');
+        
+        if (backToFormBtn && otpVerification) {
+          backToFormBtn.addEventListener('click', function() {
+            otpVerification.classList.remove('show');
+            setTimeout(() => {
+              otpVerification.style.display = 'none';
+            }, 300);
+          });
+        }
+        
+        const authContainer = document.querySelector('.auth-container');
+        if (authContainer) {
+          authContainer.style.position = 'relative';
+          authContainer.style.overflow = 'hidden';
+        }
+      });
     </script>
   </body>
 </html>
