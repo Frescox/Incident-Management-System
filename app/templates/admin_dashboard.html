@@ -169,11 +169,11 @@
                                 <i class="bi bi-funnel me-1"></i> Filtrar
                             </button>
                             <ul class="dropdown-menu" aria-labelledby="filterDropdown" style="background-color: var(--card-bg); border-color: var(--border-color);">
-                                <li><a class="dropdown-item" href="#" style="color: var(--text-primary)">Todas</a></li>
-                                <li><a class="dropdown-item" href="#" style="color: var(--text-primary)">Nuevas</a></li>
-                                <li><a class="dropdown-item" href="#" style="color: var(--text-primary)">En Progreso</a></li>
-                                <li><a class="dropdown-item" href="#" style="color: var(--text-primary)">Resueltas</a></li>
-                                <li><a class="dropdown-item" href="#" style="color: var(--text-primary)">Cerradas</a></li>
+                                <li><a class="dropdown-item filter-item" href="#" data-filter="todas" style="color: var(--text-primary)">Todas</a></li>
+                                <li><a class="dropdown-item filter-item" href="#" data-filter="nuevo" style="color: var(--text-primary)">Nuevas</a></li>
+                                <li><a class="dropdown-item filter-item" href="#" data-filter="en_progreso" style="color: var(--text-primary)">En Progreso</a></li>
+                                <li><a class="dropdown-item filter-item" href="#" data-filter="resuelto" style="color: var(--text-primary)">Resueltas</a></li>
+                                <li><a class="dropdown-item filter-item" href="#" data-filter="cerrado" style="color: var(--text-primary)">Cerradas</a></li>
                             </ul>
                         </div>
                     </div>
@@ -201,7 +201,7 @@
                         </thead>
                         <tbody class="table-color">
                             {% for i in incidencias %}
-                            <tr class="align-middle table-row {% if i.prioridad_nombre.lower() == 'alta' %}priority-high{% elif i.prioridad_nombre.lower() == 'media' %}priority-medium{% else %}priority-low{% endif %}">
+                            <tr class="align-middle table-row incident-row {% if i.prioridad_nombre.lower() == 'alta' %}priority-high{% elif i.prioridad_nombre.lower() == 'media' %}priority-medium{% else %}priority-low{% endif %}" data-estado="{{ i.estado_nombre.lower() }}">
                                 <td class="py-3">{{ i.id }}</td>
                                 <td class="py-3 fw-medium">{{ i.titulo }}</td>
                                 <td class="py-3">{{ i.categoria_nombre }}</td>
@@ -430,6 +430,36 @@
                         row.style.display = 'none';
                     }
                 }
+            });
+        });
+        
+        // Filtrado de incidencias por estado
+        document.querySelectorAll('.filter-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const filterType = this.getAttribute('data-filter');
+                
+                document.querySelectorAll('.incident-row').forEach(row => {
+                    if (filterType === 'todas') {
+                        row.style.display = '';
+                    } else {
+                        const rowEstado = row.getAttribute('data-estado');
+                        if (rowEstado === filterType) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    }
+                });
+                
+                // Actualizar el texto del botón de filtro para mostrar el filtro activo
+                const filterButton = document.getElementById('filterDropdown');
+                const filterText = filterType === 'todas' ? 'Filtrar' : 
+                                  filterType === 'nuevo' ? 'Nuevas' :
+                                  filterType === 'en_progreso' ? 'En Progreso' :
+                                  filterType === 'resuelto' ? 'Resueltas' : 'Cerradas';
+                
+                filterButton.innerHTML = `<i class="bi bi-funnel me-1"></i> ${filterText}`;
             });
         });
         
