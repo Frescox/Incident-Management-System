@@ -25,7 +25,6 @@ class UserController:
         apellido = decrypt(usuario.apellido)
         correo = session.get('user_email')
         
-        # Get user's incidents with related data
         incidencias = db.session.query(Incidencia).filter_by(
             usuario_creador_id=usuario.id
         ).join(
@@ -200,7 +199,6 @@ class UserController:
         if not usuario:
             return redirect(url_for('auth.index'))
 
-        # Wrap the SQL query with text()
         query = text("""
             SELECT 
                 i.*,
@@ -237,7 +235,7 @@ class UserController:
                     comentario.usuario.apellido = apellido_descifrado
 
 
-        # Obtener historial (wrapped with text())
+        # Obtener historial
         historial = db.session.execute(
             text("""
             SELECT h.*, 

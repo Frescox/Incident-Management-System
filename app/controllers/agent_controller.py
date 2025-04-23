@@ -14,7 +14,7 @@ class AgentController:
             return redirect(url_for('auth.index'))
 
         usuario = Usuario.find_by_email(session['user_email'])
-        if not usuario or usuario.rol_id != 2:  # 2 = agent role
+        if not usuario or usuario.rol_id != 2:
             return redirect(url_for('auth.index'))
 
         nombre = decrypt(usuario.nombre)
@@ -25,10 +25,10 @@ class AgentController:
         incidencias = Incidencia.get_by_agent(usuario.id)
         
         # Agrupar incidencias por estado
-        nuevas = [inc for inc in incidencias if inc.estado_id == 1]  # Estado "nuevo"
-        en_progreso = [inc for inc in incidencias if inc.estado_id == 2]  # Estado "en_progreso"
-        resueltas = [inc for inc in incidencias if inc.estado_id == 3]  # Estado "resuelto"
-        cerradas = [inc for inc in incidencias if inc.estado_id == 4]  # Estado "cerrado"
+        nuevas = [inc for inc in incidencias if inc.estado_id == 1]
+        en_progreso = [inc for inc in incidencias if inc.estado_id == 2]
+        resueltas = [inc for inc in incidencias if inc.estado_id == 3]
+        cerradas = [inc for inc in incidencias if inc.estado_id == 4]
         
         # Obtener todos los estados para el formulario de cambio de estado
         estados = Estado.get_all()
@@ -59,11 +59,11 @@ class AgentController:
             return redirect(url_for('agent.dashboard'))
 
         # Verificar que la incidencia esté en estado "en_progreso"
-        if incidencia.estado_id != 2:  # 2 = en_progreso
+        if incidencia.estado_id != 2:
             flash('Solo se pueden resolver incidencias en progreso', 'warning')
             return redirect(url_for('agent.dashboard'))
 
-        # Cambiar al estado "resuelto" (ID 3)
+        # Cambiar al estado "resuelto"
         comentario = request.form.get('comentario', 'Incidencia resuelta')
         if incidencia.change_status(3, usuario.id, comentario):
             flash('Incidencia resuelta correctamente', 'success')
@@ -126,8 +126,6 @@ class AgentController:
                 if comentario.usuario:
                     comentario.usuario.nombre = nombre_descifrado
                     comentario.usuario.apellido = apellido_descifrado
-
-    # -------------------------------------------------------------------------
 
         return render_template('agent_view_incident.html',
                             nombre=nombre,

@@ -55,4 +55,3 @@ def init_routes(app):
     app.register_blueprint(user_bp)
     app.register_blueprint(agent_bp)
     app.register_blueprint(admin_bp)
-
