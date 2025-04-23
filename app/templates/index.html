@@ -179,7 +179,10 @@
                   class="form-control"
                   id="reg-telefono"
                   name="telefono"
-                  placeholder="+1234567890" />
+                  placeholder="+1234567890"
+                  required
+                  pattern="^\+[0-9]{7,15}$"
+                  title="Solo se permite el signo + al inicio seguido de 7 a 15 números. No se aceptan espacios ni letras." />                    
                 <small class="form-text"
                   >Formato: +[código de país][número]</small
                 >
