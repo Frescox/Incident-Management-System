@@ -1,12 +1,12 @@
 from flask import render_template, session, redirect, url_for, request, flash, jsonify
-from app.models.user import Usuario
+from app.models.user_models import Usuario
 from app.models.ticket_models import Incidencia, Comentario, HistorialEstado
 from app.models.catalog_models import Estado, Prioridad, Categoria
 from app.services.assignment_service import AssignmentService
 from app.services.notification_service import NotificationService
 from app.utils.aes_encryption import decrypt
 from datetime import datetime
-from app.models import db  # Importa el SQLAlchemy db
+from app.models import db 
 from sqlalchemy import text
 from app.utils.logger import log_action
 

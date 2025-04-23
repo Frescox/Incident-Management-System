@@ -1,86 +1,182 @@
-from .core import db, BaseModel
-from app.utils.aes_encryption import encrypt, decrypt
-import datetime
+from app.db.database import db
+from app.utils.aes_encryption import decrypt
+import hashlib
+import os
+import time
 import random
-from .catalog_models import CategoriaAgente
+from app.utils.aes_encryption import encrypt, decrypt
 
-class Rol(BaseModel):
-    __tablename__ = 'roles'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(50), unique=True, nullable=False)
-    descripcion = db.Column(db.Text)
-    
-    # Relación con usuarios se define en la clase Usuario
+class Usuario:
+    def __init__(self, id=None, nombre="", apellido="", email="", password="", rol_id=3, estado=True,
+                 telefono=None, metodo_verificacion=None, otp=None, otp_expira=None, verificado=False):
+        self.id = id
+        self.nombre = nombre
+        self.apellido = apellido
+        self.email = email
+        self.password = password
+        self.rol_id = rol_id
+        self.estado = estado
+        self.ultimo_login = None
+        self.telefono = telefono
+        self.metodo_verificacion = metodo_verificacion
+        self.otp = otp
+        self.otp_expira = otp_expira
+        self.verificado = verificado
 
-class Usuario(BaseModel):
-    __tablename__ = 'usuarios'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-    apellido = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(255), unique=True, nullable=False)
-    password = db.Column(db.String(255), nullable=False)
-    rol_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
-    estado = db.Column(db.Boolean, default=True)
-    telefono = db.Column(db.String(20), nullable=True)
-    metodo_verificacion = db.Column(db.String(10), nullable=True)
-    otp = db.Column(db.String(6), nullable=True)
-    otp_expira = db.Column(db.DateTime, nullable=True)
-    verificado = db.Column(db.Boolean, default=False)
-    ultimo_login = db.Column(db.DateTime, nullable=True)
 
-    # Relaciones
-    rol = db.relationship('Rol', backref='usuarios')
-    categorias_asignadas = db.relationship('CategoriaAgente', backref='agente', cascade='all, delete-orphan')
-    
-    def get_full_name(self):
-        return f"{self.nombre} {self.apellido}"
+    def save(self):
+        conn = db.get_connection()
+        if not conn:
+            return None
+        cursor = conn.cursor()
 
-    @classmethod
-    def find_by_email(cls, email):
-        return cls.query.filter_by(email=email).first()
-    
-    # Métodos para añadir a la clase Usuario en app/models/user_models.py
+        password_encrypted = self.password
 
-    @classmethod
-    def find_by_email(cls, email):
-        """
-        Busca un usuario por su email desencriptando los emails almacenados
-        """
-        # Buscar todos los usuarios activos
-        usuarios = cls.query.filter_by(estado=True).all()
+        if self.id is None:
+            query = """
+            INSERT INTO usuarios (nombre, apellido, email, password, rol_id, estado, telefono, 
+                                metodo_verificacion, otp, otp_expira, verificado)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """
+            cursor.execute(query, (self.nombre, self.apellido, self.email, password_encrypted, 
+                                self.rol_id, self.estado, self.telefono, self.metodo_verificacion,
+                                self.otp, self.otp_expira, self.verificado))
+            self.id = cursor.lastrowid
+        else:
+            query = """
+            UPDATE usuarios 
+            SET nombre=%s, apellido=%s, email=%s, password=%s, rol_id=%s, estado=%s,
+                telefono=%s, metodo_verificacion=%s, otp=%s, otp_expira=%s, verificado=%s,
+                updated_at=CURRENT_TIMESTAMP
+            WHERE id=%s
+            """
+            cursor.execute(query, (self.nombre, self.apellido, self.email, password_encrypted, 
+                                self.rol_id, self.estado, self.telefono, self.metodo_verificacion,
+                                self.otp, self.otp_expira, self.verificado, self.id))
         
-        # Iterar y comparar el email desencriptado
-        for usuario in usuarios:
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return self.id
+
+    @staticmethod
+    def find_by_email(email):
+        conn = db.get_connection()
+        if not conn:
+            return None
+        cursor = conn.cursor(dictionary=True)
+        
+        query = "SELECT * FROM usuarios WHERE estado = 1"  # Solo usuarios activos
+        cursor.execute(query)
+        
+        for result in cursor.fetchall():
             try:
-                email_desencriptado = decrypt(usuario.email)
-                if email_desencriptado == email:
+                decrypted_email = decrypt(result['email']) if result['email'] else ""
+                if decrypted_email == email:
+                    usuario = Usuario(
+                        id=result['id'],
+                        nombre=result['nombre'],
+                        apellido=result['apellido'],
+                        email=result['email'], 
+                        password=result['password'],
+                        rol_id=result['rol_id'],
+                        estado=result['estado'],
+                        telefono=result['telefono'],
+                        metodo_verificacion=result.get('metodo_verificacion'),
+                        otp=result.get('otp'),
+                        otp_expira=result.get('otp_expira'),
+                        verificado=result.get('verificado', False)
+                    )
+                    usuario.ultimo_login = result.get('ultimo_login')
+                    usuario.created_at = result.get('created_at')
+                    usuario.updated_at = result.get('updated_at')
+                    cursor.close()
+                    conn.close()
                     return usuario
             except Exception as e:
                 print(f"[ERROR] Falló la desencriptación de email: {e}")
                 continue
-        
+
+        cursor.close()
+        conn.close()
         return None
 
-    def get_nombre_desencriptado(self):
-        """Retorna el nombre desencriptado del usuario."""
-        return decrypt(self.nombre) if self.nombre else ""
+    @staticmethod
+    def find_by_id(user_id):
+        conn = db.get_connection()
+        if not conn:
+            return None
+        cursor = conn.cursor(dictionary=True)
+        
+        query = "SELECT * FROM usuarios WHERE id = %s"
+        cursor.execute(query, (user_id,))
+        result = cursor.fetchone()
+        
+        if result:
+            usuario = Usuario(
+                id=result['id'],
+                nombre=result['nombre'],
+                apellido=result['apellido'],
+                email=result['email'], 
+                password=result['password'],
+                rol_id=result['rol_id'],
+                estado=result['estado'],
+                telefono=result['telefono'],
+                metodo_verificacion=result.get('metodo_verificacion'),
+                otp=result.get('otp'),
+                otp_expira=result.get('otp_expira'),
+                verificado=result.get('verificado', False)
+            )
+            usuario.ultimo_login = result.get('ultimo_login')
+            usuario.created_at = result.get('created_at')
+            usuario.updated_at = result.get('updated_at')
+            cursor.close()
+            conn.close()
+            return usuario
+        
+        cursor.close()
+        conn.close()
+        return None
 
-    def get_apellido_desencriptado(self):
-        """Retorna el apellido desencriptado del usuario."""
-        return decrypt(self.apellido) if self.apellido else ""
-
-    def get_email_desencriptado(self):
-        """Retorna el email desencriptado del usuario."""
-        return decrypt(self.email) if self.email else ""
-
-    def get_telefono_desencriptado(self):
-        """Retorna el teléfono desencriptado del usuario."""
-        return decrypt(self.telefono) if self.telefono else None
+    @staticmethod
+    def get_all_users():
+        conn = db.get_connection()
+        if not conn:
+            return []
+        cursor = conn.cursor(dictionary=True)
+        
+        query = """
+        SELECT u.id, u.nombre, u.apellido, u.email, u.estado, 
+               r.nombre AS rol_nombre, r.id AS rol_id
+        FROM usuarios u
+        JOIN roles r ON u.rol_id = r.id
+        ORDER BY u.id
+        """
+        cursor.execute(query)
+        results = cursor.fetchall()
+        
+        usuarios = []
+        for result in results:
+            try:
+                usuario = {
+                    'id': result['id'],
+                    'nombre': decrypt(result['nombre']) if result['nombre'] else "",
+                    'apellido': decrypt(result['apellido']) if result['apellido'] else "",
+                    'email': decrypt(result['email']) if result['email'] else "",
+                    'estado': result['estado'],
+                    'rol_nombre': result['rol_nombre'],
+                    'rol_id': result['rol_id']
+                }
+                usuarios.append(usuario)
+            except Exception as e:
+                print(f"Error decrypting user data: {e}")
+                continue
+        
+        cursor.close()
+        conn.close()
+        return usuarios
 
     def verify_password(self, password):
-        """Verifica si la contraseña dada coincide con la del usuario."""
         if not self.password:
             return False
         try:
@@ -90,55 +186,44 @@ class Usuario(BaseModel):
             print(f"[ERROR] Falló la desencriptación de contraseña: {e}")
             return False
 
-    # En el método generate_otp
+    def get_nombre_desencriptado(self):
+        return decrypt(self.nombre) if self.nombre else ""
+    
+    def get_apellido_desencriptado(self):
+        return decrypt(self.apellido) if self.apellido else ""
+    
+    def get_telefono_desencriptado(self):
+        return decrypt(self.telefono) if self.telefono else None
+    
     def generate_otp(self):
-        otp = str(random.randint(100000, 999999))
-        self.otp = otp
-        # Guardar como timestamp (entero)
-        self.otp_expira = int((datetime.datetime.now() + datetime.timedelta(minutes=15)).timestamp())
-        db.session.commit()
-        return otp
-
-    # En el método verify_otp
+        self.otp = str(int(random.random() * 1000000)).zfill(6)
+        self.otp_expira = int(time.time()) + 900
+        self.save()
+        return self.otp
+    
     def verify_otp(self, otp):
+        current_time = int(time.time())
         if not self.otp or not self.otp_expira:
             return False
-        
-        current_time = int(datetime.datetime.now().timestamp())
-        
         if self.otp == otp and current_time <= self.otp_expira:
             self.verificado = True
             self.otp = None
             self.otp_expira = None
-            db.session.commit()
+            self.save()
             return True
         return False
-
+    
     def update_login_timestamp(self):
-        """Actualiza la marca de tiempo del último inicio de sesión."""
-        self.ultimo_login = datetime.datetime.now()
-        db.session.commit()
-
-    @classmethod
-    def get_all_users(cls):
-        """Retorna todos los usuarios con sus datos desencriptados."""
-        users = cls.query.all()
-        usuarios = []
+        if not self.id:
+            return
+        conn = db.get_connection()
+        if not conn:
+            return
+        cursor = conn.cursor()
         
-        for user in users:
-            try:
-                usuario = {
-                    'id': user.id,
-                    'nombre': decrypt(user.nombre) if user.nombre else "",
-                    'apellido': decrypt(user.apellido) if user.apellido else "",
-                    'email': decrypt(user.email) if user.email else "",
-                    'estado': user.estado,
-                    'rol_nombre': user.rol.nombre if user.rol else "",
-                    'rol_id': user.rol_id
-                }
-                usuarios.append(usuario)
-            except Exception as e:
-                print(f"Error desencriptando datos de usuario: {e}")
-                continue
+        query = "UPDATE usuarios SET ultimo_login=CURRENT_TIMESTAMP WHERE id=%s"
+        cursor.execute(query, (self.id,))
         
-        return usuarios
+        conn.commit()
+        cursor.close()
+        conn.close()

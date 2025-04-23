@@ -3,8 +3,6 @@ from app.models.user_models import Usuario
 from app.services.mail_service import send_email
 from app.services.sms_service import send_sms
 from app.utils.aes_encryption import encrypt, decrypt
-from app.models.core import db
-import datetime
 
 class AuthController:
     @staticmethod
@@ -32,7 +30,7 @@ class AuthController:
                 if existing_user:
                     return jsonify({'success': False, 'message': 'El correo ya está registrado'}), 400
 
-                # Crear nuevo usuario con SQLAlchemy (todo encriptado)
+                # Crear nuevo usuario (todo encriptado)
                 nuevo_usuario = Usuario(
                     nombre=encrypt(nombre),
                     apellido=encrypt(apellido),
@@ -45,9 +43,8 @@ class AuthController:
                     rol_id=3  # Usuario regular por defecto
                 )
 
-                # Guardar en la base de datos usando SQLAlchemy
-                db.session.add(nuevo_usuario)
-                db.session.commit()
+                # Guardar en la base de datos usando el método save() del modelo
+                nuevo_usuario.save()
 
                 # Generar y enviar OTP
                 otp_code = nuevo_usuario.generate_otp()
@@ -66,7 +63,6 @@ class AuthController:
                 }), 200
 
             except Exception as e:
-                db.session.rollback()
                 return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
 
         return jsonify({'success': False, 'message': 'Método no permitido'}), 405
@@ -114,7 +110,6 @@ class AuthController:
                     }), 400
 
             except Exception as e:
-                db.session.rollback()
                 return jsonify({'success': False, 'message': str(e)}), 500
 
         return jsonify({'success': False, 'message': 'Método no permitido'}), 405
@@ -123,7 +118,6 @@ class AuthController:
     def login():
         if request.method == 'POST':
             try:
-            
                 data = request.get_json() if request.is_json else request.form
                 email = data.get('email')
                 password = data.get('password')
@@ -140,7 +134,7 @@ class AuthController:
                 if not usuario or not usuario.estado:
                     return jsonify({
                         'success': False,
-                        'message': 'Credenciales inválidas'
+                        'message': 'Su cuenta ha sido desactivada / No se encuentra registrado'
                     }), 401
 
                 # Verificar contraseña

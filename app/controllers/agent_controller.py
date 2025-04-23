@@ -1,5 +1,5 @@
 from flask import current_app, render_template, session, redirect, url_for, request, flash
-from app.models.user import Usuario
+from app.models.user_models import Usuario
 from app.models.ticket_models import Incidencia, Comentario, HistorialEstado
 from app.models.catalog_models import Estado, Prioridad, Categoria
 from app.utils.aes_encryption import decrypt
