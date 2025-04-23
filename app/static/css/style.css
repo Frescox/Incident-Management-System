@@ -477,3 +477,50 @@ body {
 tr.new-incident {
   animation: highlightNew 2s ease-out;
 }
+
+/* Mobile Responsive Enhancements */
+@media (max-width: 768px) {
+  .container-card {
+    padding: 15px;
+  }
+  
+  .btn {
+    padding: 8px 14px;
+    font-size: 0.9rem;
+  }
+  
+  .section-title {
+    font-size: 1.3rem;
+  }
+  
+  .form-control, .form-select {
+    font-size: 0.9rem;
+    padding: 8px 12px;
+  }
+  
+  .modal-dialog {
+    margin: 10px;
+  }
+}
+
+@media (max-width: 576px) {
+  .container-card {
+    padding: 12px;
+  }
+  
+  .btn {
+    width: 100%;
+    margin-bottom: 5px;
+  }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .btn-group .btn {
+    border-radius: 6px !important;
+    margin-bottom: 5px;
+  }
+}
