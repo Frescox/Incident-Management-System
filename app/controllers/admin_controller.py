@@ -432,4 +432,3 @@ class AdminController:
             'prioridad_data': convertir(incidencias_prioridad),
             'roles_data': convertir(usuarios_roles)
         })
-
