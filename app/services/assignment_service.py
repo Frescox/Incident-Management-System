@@ -48,23 +48,6 @@ class AssignmentService:
         agentes = self.db.execute_query(query, (2,))
         return agentes[0]['id'] if agentes else None
 
-
-
-    # def get_last_assigned_agent(self, categoria_id):
-    #     """
-    #     Consulta al último agente asignado en esta categoría.
-    #     """
-    #     query = """
-    #         SELECT i.agente_asignado_id
-    #         FROM incidencias i
-    #         JOIN categorias c ON i.categoria_id = c.id
-    #         WHERE c.id = %s AND i.agente_asignado_id IS NOT NULL
-    #         ORDER BY i.fecha_creacion DESC
-    #         LIMIT 1
-    #     """
-    #     results = self.db.execute_query(query, (categoria_id,))
-    #     return results[0]['agente_asignado_id'] if results else None
-
     def assign_agent(self):
         """
         Asigna un agente activo disponible. Si todos tienen incidencias,
@@ -79,5 +62,3 @@ class AssignmentService:
             return agente_id  # Asignas al que tenga menos incidencias
 
         raise ValueError("No hay agentes disponibles.")
-
-

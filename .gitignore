@@ -2,3 +2,5 @@
 __pycache__/
 *.py[cod]
 **/__pycache__/
+venv/
+wfastcgi.log

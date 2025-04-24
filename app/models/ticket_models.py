@@ -67,11 +67,11 @@ class Incidencia(BaseModel):
         self.fecha_ultima_actualizacion = datetime.utcnow()
         
         # Si el nuevo estado es "resuelto", actualizar fecha de resolución
-        if int(new_estado_id) == 3:  # 3 = resuelto
+        if int(new_estado_id) == 3:
             self.fecha_resolucion = datetime.utcnow()
         
         # Si el nuevo estado es "cerrado", actualizar fecha de cierre
-        if int(new_estado_id) == 4:  # 4 = cerrado
+        if int(new_estado_id) == 4:
             self.fecha_cierre = datetime.utcnow()
         
         # Registrar el cambio en el historial
@@ -95,7 +95,6 @@ class Incidencia(BaseModel):
     
     @classmethod
     def get_by_id_with_details(cls, id):
-        # Fetch the incident with all related data loaded
         return cls.query.filter_by(id=id)\
             .options(
                 db.joinedload(cls.categoria),

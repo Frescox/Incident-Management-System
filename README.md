@@ -16,7 +16,13 @@ Sistema de gestión de incidencias desarrollado con Flask y MySQL (XAMPP).
    cd Incident-Management-System
    ```
 
-2. **Instala dependencias**:
+2. **Crea un ambiente virtual**:
+   ```bash
+   python -m venv venv
+   .\venv\Scripts\activate
+   ```
+
+3. **Instala dependencias**:
    ```bash
    pip install -r requirements.txt
    ```
@@ -45,20 +51,6 @@ Si necesitas cambiar credenciales, edita `config.py`:
     SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://usuario:contraseña@localhost/sistema_incidencias'
 ```
 
-## 🔍 Probar la conexión a la base de datos
-
-Ejecuta el script de prueba:
-
-```bash
-python test/test_db.py
-```
-
-Si todo va bien, deberías ver:
-
-```
-¡Conexión exitosa a la base de datos!
-```
-
 ## 🏃 Ejecutar la aplicación
 
 ```bash
@@ -75,3 +67,9 @@ o de esta otra:
 ```
 http://127.0.0.1:5000
 ```
+
+# Credenciales para el admin
+
+## Correo: admin@sistema.com
+
+## passd:  adminsistema

@@ -1,154 +1,213 @@
-<!-- app/templates/view_incident.html -->
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Detalle de Incidencia - Sistema de Incidencias</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        .incident-container {
-            max-width: 1000px;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-        }
-        .user-info {
-            background-color: #f1f8ff;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .incident-header {
-            border-bottom: 1px solid #eee;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-        }
-        .incident-details {
-            margin-bottom: 30px;
-        }
-        .detail-label {
-            font-weight: bold;
-            color: #6c757d;
-        }
-        .comments-section {
-            margin-top: 30px;
-        }
-        .comment {
-            border-left: 3px solid #0d6efd;
-            padding-left: 10px;
-            margin-bottom: 15px;
-        }
-    </style>
-</head>
-<body>
-    <div class="incident-container">
-        <div class="user-info">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h2>{{ nombre }} {{ apellido }}</h2>
-                    <p class="mb-0">Correo: {{ correo }}</p>
-                </div>
-                <div>
-                    <a href="{{ url_for('agent.dashboard') }}" class="btn btn-outline-secondary me-2">
-                        <i class="bi bi-arrow-left"></i> Volver
-                    </a>
-                    <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">
-                        <i class="bi bi-box-arrow-right"></i> Cerrar sesión
-                    </a>
-                </div>
-            </div>
-        </div>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{{ url_for('static', filename='css/style.css') }}" />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{{ url_for('static', filename='css/view-incident.css') }}" />
+  </head>
 
-        <div class="incident-header">
-            <h3>Incidencia #{{ incidencia.id }}: {{ incidencia.titulo }}</h3>
-            <div class="d-flex justify-content-between align-items-center">
-                <span class="badge 
-                    {% if incidencia.estado.nombre == 'nuevo' %}bg-primary
-                    {% elif incidencia.estado.nombre == 'en_progreso' %}bg-warning text-dark
-                    {% elif incidencia.estado.nombre == 'resuelto' %}bg-success
-                    {% else %}bg-secondary{% endif %}">
-                    {{ incidencia.estado.nombre|replace('_', ' ')|title }}
-                </span>
-                <small class="text-muted">Creada: {{ incidencia.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</small>
+  <body>
+    <header class="main-header">
+      <div class="container-fluid">
+        <div class="row align-items-center">
+          <div class="col-md-6">
+            <div class="d-flex align-items-center">
+              <h2 class="logo-text me-4">SGI</h2>
+              <div class="user-welcome">
+                <h4 class="mb-0">{{ nombre }} {{ apellido }}</h4>
+                <p class="mb-0">{{ correo }}</p>
+              </div>
             </div>
+          </div>
+          <div class="col-md-6 text-md-end mt-3 mt-md-0">
+            <a
+              href="{{ url_for('agent.dashboard') }}"
+              class="btn btn-outline-secondary me-2">
+              <i class="bi bi-arrow-left me-1"></i> Volver al Dashboard
+            </a>
+          </div>
         </div>
+      </div>
+    </header>
 
-        <div class="incident-details">
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <p class="detail-label">Categoría</p>
-                    <p>{{ incidencia.categoria.nombre }}</p>
-                </div>
-                <div class="col-md-6">
-                    <p class="detail-label">Prioridad</p>
-                    <p>{{ incidencia.prioridad.nombre|capitalize }}</p>
-                </div>
-            </div>
-            
-            <div class="mb-3">
-                <p class="detail-label">Descripción</p>
-                <p>{{ incidencia.descripcion }}</p>
-            </div>
-            
-            <div class="row">
-                <div class="col-md-6">
-                    <p class="detail-label">Última Actualización</p>
-                    <p>{{ incidencia.fecha_ultima_actualizacion.strftime('%d/%m/%Y %H:%M') }}</p>
-                </div>
-                {% if incidencia.fecha_resolucion %}
-                <div class="col-md-6">
-                    <p class="detail-label">Fecha Resolución</p>
-                    <p>{{ incidencia.fecha_resolucion.strftime('%d/%m/%Y %H:%M') }}</p>
-                </div>
-                {% endif %}
-            </div>
+    <!-- Mensajes Flash -->
+    <div class="flash-bg container-fluid mt-3">
+      <div class="row">
+        <div class="col">
+          {% with messages = get_flashed_messages(with_categories=true) %} {% if
+          messages %} {% for category, message in messages %}
+          <div
+            class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show"
+            role="alert">
+            {{ message }}
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="alert"
+              aria-label="Close"></button>
+          </div>
+          {% endfor %} {% endif %} {% endwith %}
         </div>
-
-        <div class="comments-section">
-            <h5>Comentarios</h5>
-
-            {% if not comentarios %}
-            <div class="alert alert-info">
-                No hay comentarios para esta incidencia.
-            </div>
-            {% else %}
-                {% set nombre_usuario = comentarios[0].usuario.nombre if comentarios[0].usuario else None %}
-                {% set apellido_usuario = comentarios[0].usuario.apellido if comentarios[0].usuario else None %}
-                
-                {% if nombre_usuario and apellido_usuario %}
-                    {% set nombre_descifrado = nombre_usuario %}
-                    {% set apellido_descifrado = apellido_usuario %}
-                {% else %}
-                    {% set nombre_descifrado = 'Desconocido' %}
-                    {% set apellido_descifrado = '' %}
-                {% endif %}
-            
-                {% for comentario in comentarios %}
-                <div class="comment">
-                    <div class="d-flex justify-content-between">
-                        <strong>{{ nombre_descifrado }} {{ apellido_descifrado }}</strong>
-                        <small class="text-muted">
-                            {% if comentario.fecha_creacion %}
-                                {{ comentario.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
-                            {% else %}
-                                Fecha no disponible
-                            {% endif %}
-                        </small>
-                    </div>
-                    <p>{{ comentario.contenido }}</p>
-                </div>
-                {% endfor %}
-            {% endif %}  
-        </div>
+      </div>
     </div>
 
+    <div class="main-content">
+      <div class="incident-card">
+        <div class="incident-header">
+          <div class="d-flex justify-content-between align-items-center">
+            <h3 class="section-title mb-0">
+              Incidencia #{{ incidencia.id }}: {{ incidencia.titulo }}
+            </h3>
+            <span
+              class="badge {% if incidencia.estado.nombre == 'nuevo' %}badge-new{% elif incidencia.estado.nombre == 'en_progreso' %}badge-in-progress{% elif incidencia.estado.nombre == 'resuelto' %}badge-resolved{% else %}badge-closed{% endif %}">
+              {{ incidencia.estado.nombre|replace('_', ' ')|title }}
+            </span>
+          </div>
+          <p class="mt-2">
+            <i class="bi bi-calendar3 me-1"></i> Creada: {{
+            incidencia.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
+          </p>
+        </div>
+
+        <!-- Detalles de la incidencia -->
+        <div class="incident-details">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <div class="detail-group">
+                <p class="detail-label">
+                  <i class="bi bi-tag me-1"></i> Categoría
+                </p>
+                <p class="detail-value">{{ incidencia.categoria.nombre }}</p>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="detail-group">
+                <p class="detail-label">
+                  <i class="bi bi-exclamation-triangle me-1"></i> Prioridad
+                </p>
+                <p class="detail-value">
+                  <span
+                    class="priority-indicator {% if incidencia.prioridad.nombre == 'alta' %}priority-high-dot{% elif incidencia.prioridad.nombre == 'media' %}priority-medium-dot{% else %}priority-low-dot{% endif %} me-2"></span>
+                  {{ incidencia.prioridad.nombre|capitalize }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-group mb-3">
+            <p class="detail-label">
+              <i class="bi bi-card-text me-1"></i> Descripción
+            </p>
+            <div class="description-box">{{ incidencia.descripcion }}</div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <div class="detail-group">
+                <p class="detail-label">
+                  <i class="bi bi-clock-history me-1"></i> Última Actualización
+                </p>
+                <p class="detail-value">
+                  {{ incidencia.fecha_ultima_actualizacion.strftime('%d/%m/%Y - %H:%M') }}
+                </p>
+              </div>
+            </div>
+            {% if incidencia.fecha_resolucion %}
+            <div class="col-md-6">
+              <div class="detail-group">
+                <p class="detail-label">
+                  <i class="bi bi-check2-circle me-1"></i> Fecha Resolución
+                </p>
+                <p class="detail-value">
+                  {{ incidencia.fecha_resolucion.strftime('%d/%m/%Y - %H:%M') }}
+                </p>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Sección de comentarios -->
+        <div class="comments-section">
+          <h5 class="section-title">
+            <i class="bi bi-chat-left-text me-1"></i> Comentarios
+          </h5>
+
+          {% if not comentarios %}
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i> No hay comentarios para esta
+            incidencia.
+          </div>
+          {% else %}
+          <div class="comments-container">
+            {% set nombre_usuario = comentarios[0].usuario.nombre if comentarios[0].usuario else None %}
+            {% set apellido_usuario = comentarios[0].usuario.apellido if comentarios[0].usuario else None %}
+            
+            {% if nombre_usuario and apellido_usuario %}
+                {% set nombre_descifrado = nombre_usuario %}
+                {% set apellido_descifrado = apellido_usuario %}
+            {% else %}
+                {% set nombre_descifrado = 'Desconocido' %}
+                {% set apellido_descifrado = '' %}
+            {% endif %}
+          
+            {% for comentario in comentarios %}
+            <div class="comment">
+              <div class="comment-header">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="comment-author">
+                    <i class="bi bi-person-circle me-1"></i>
+                    <strong>{{ nombre_descifrado }} {{ apellido_descifrado }}</strong>
+                  </div>
+                  <small class="">
+                    <i class="bi bi-clock me-1"></i>
+                    {% if comentario.fecha_creacion %}
+                        {{ comentario.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
+                    {% else %}
+                        Fecha no disponible
+                    {% endif %}
+                  </small>
+                </div>
+              </div>
+              <div class="comment-content">{{ comentario.contenido }}</div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <footer class="page-footer">
+      <p class="m-0">&copy; 2025 Sistema de Gestión de Incidencias</p>
+    </footer>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+    <script>
+      // Cerrar automáticamente los mensajes flash después de 5 segundos
+      setTimeout(() => {
+        const alerts = document.querySelectorAll(".alert");
+        alerts.forEach((alert) => {
+          const bsAlert = bootstrap.Alert.getInstance(alert);
+          if (bsAlert) {
+            bsAlert.close();
+          }
+        });
+      }, 5000);
+    </script>
+  </body>
 </html>
