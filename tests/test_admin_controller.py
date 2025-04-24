@@ -3,7 +3,6 @@ from flask import session, url_for
 from app.models.ticket_models import Incidencia
 from app.models.user_models import Usuario
 from app.utils.aes_encryption import encrypt, decrypt
-from app.routers.routes import init_routes
 
 class TestAdminController:
     """Pruebas para el controlador de administradores."""
@@ -12,8 +11,8 @@ class TestAdminController:
         """Prueba el acceso al dashboard de administrador."""
         # Sin iniciar sesión, debe redirigir a la página de inicio
         
-        response = client.get(url_for('/auth/'))         
-        assert response.status_code == 200
+        response = client.get(url_for('/admin/login'))         
+        assert response.status_code == 302
         
         # Iniciar sesión como administrador
         with client.session_transaction() as sess:
