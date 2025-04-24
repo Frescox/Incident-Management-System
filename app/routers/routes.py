@@ -14,7 +14,7 @@ admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 auth_bp.route('/', methods=['GET'])(AuthController.index)
 auth_bp.route('/register', methods=['POST'])(AuthController.register)
 auth_bp.route('/verify_otp', methods=['POST'])(AuthController.verify_otp)
-auth_bp.route('/login', methods=['POST'])(AuthController.login)
+auth_bp.route('/login', methods=['GET', 'POST'])(AuthController.login) 
 auth_bp.route('/logout', methods=['GET'])(AuthController.logout)
 
 # User Routes
