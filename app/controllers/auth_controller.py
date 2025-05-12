@@ -12,6 +12,10 @@ class AuthController:
 
     @staticmethod
     def register():
+        if request.method == 'GET':
+            # Lógica para mostrar el formulario de login
+            return render_template('index.html')
+        
         if request.method == 'POST':
             try:
                 data = request.get_json() if request.is_json else request.form
@@ -116,6 +120,10 @@ class AuthController:
 
     @staticmethod
     def login():
+        if request.method == 'GET':
+            # Lógica para mostrar el formulario de login
+            return render_template('index.html')
+        
         if request.method == 'POST':
             try:
                 data = request.get_json() if request.is_json else request.form

@@ -18,7 +18,7 @@ class UserController:
             return redirect(url_for('auth.index'))
 
         usuario = Usuario.find_by_email(session['user_email'])
-        if not usuario:
+        if not usuario or usuario.rol_id != 3:
             return redirect(url_for('auth.index'))
 
         nombre = decrypt(usuario.nombre)

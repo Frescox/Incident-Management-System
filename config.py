@@ -37,8 +37,17 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
 
+class TestingConfig(Config):
+    TESTING = True
+    DEBUG = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    PRESERVE_CONTEXT_ON_EXCEPTION = False
+    WTF_CSRF_ENABLED = False
+    MAIL_SUPPRESS_SEND = True  # No enviar correos en pruebas
+
 config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
+    'testing': TestingConfig,
     'default': DevelopmentConfig
 }
