@@ -1,32 +1,25 @@
 from flask import current_app
 from app.services.mail_service import send_email
-from app.db.database import db
 from app.utils.aes_encryption import decrypt
+from app.models.core import db
+from app.models.ticket_models import Incidencia
+
 
 class NotificationService:
     def __init__(self):
         self.db = db
 
     def get_user_email_by_incident(self, incidencia_id):
-        """
-        Obtiene el correo del usuario que reportó la incidencia.
-        """
         if not incidencia_id:
             raise ValueError("incidencia_id no puede estar vacío")
 
-        query = """
-        SELECT u.email
-        FROM incidencias i
-        JOIN usuarios u ON i.usuario_creador_id = u.id
-        WHERE i.id = %s
-        """
-        result = self.db.execute_query(query, (incidencia_id,))
-        if not result or not result[0].get("email"):
+        incidencia = self.db.session.query(Incidencia).filter_by(id=incidencia_id).first()
+
+        if not incidencia or not incidencia.creador or not incidencia.creador.email:
             raise ValueError("No se pudo encontrar el correo del usuario")
-       
-        # Desencriptar el correo
+
         try:
-            email_desencriptado = decrypt(result[0]["email"])
+            email_desencriptado = decrypt(incidencia.creador.email)
             return email_desencriptado
         except Exception as e:
             current_app.logger.error(f"Error al desencriptar el correo: {str(e)}")

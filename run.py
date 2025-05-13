@@ -1,7 +1,6 @@
 from flask import Flask
 from app.controllers.auth_controller import AuthController
 from app.routers.routes import init_routes
-from app.db.database import db
 from config import config
 from app.services.mail_service import init_mail  # Importa la función de inicialización de mail
 from app.models.core import db  # Importa SQLAlchemy db

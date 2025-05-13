@@ -1,5 +1,5 @@
 from flask import request, jsonify, session, redirect, url_for, render_template
-from app.models.user_models import Usuario
+from app.models.user_rol_models import Usuario
 from app.services.mail_service import send_email
 from app.services.sms_service import send_sms
 from app.utils.aes_encryption import encrypt, decrypt

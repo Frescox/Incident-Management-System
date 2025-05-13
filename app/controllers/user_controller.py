@@ -1,5 +1,5 @@
 from flask import render_template, session, redirect, url_for, request, flash, jsonify
-from app.models.user_models import Usuario
+from app.models.user_rol_models import Usuario
 from app.models.ticket_models import Incidencia, Comentario, HistorialEstado
 from app.models.catalog_models import Estado, Prioridad, Categoria
 from app.services.assignment_service import AssignmentService
