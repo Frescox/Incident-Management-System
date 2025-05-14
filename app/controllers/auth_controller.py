@@ -1,7 +1,6 @@
 from flask import request, jsonify, session, redirect, url_for, render_template
 from app.models.user_rol_models import Usuario
 from app.services.mail_service import send_email
-from app.services.sms_service import send_sms
 from app.utils.aes_encryption import encrypt, decrypt
 
 class AuthController:
@@ -55,8 +54,6 @@ class AuthController:
 
                 if metodo_verificacion == 'email':
                     send_email(email, 'Código de verificación', f'Tu código es: {otp_code}')
-                elif metodo_verificacion == 'sms' and telefono:
-                    send_sms(telefono, f'Tu código de verificación: {otp_code}')
 
                 session['user_email'] = email  # Guardamos el email sin encriptar en la sesión
 
@@ -158,9 +155,6 @@ class AuthController:
 
                     if usuario.metodo_verificacion == 'email':
                         send_email(email, 'Verificación', f'Tu código: {otp_code}')
-                    elif usuario.metodo_verificacion == 'sms' and usuario.telefono:
-                        telefono_desencriptado = usuario.get_telefono_desencriptado()
-                        send_sms(telefono_desencriptado, f'Código: {otp_code}')
 
                     session['user_email'] = email  # Email sin encriptar
                     return jsonify({

@@ -18,8 +18,9 @@ auth_bp.route('/login', methods=['GET', 'POST'])(AuthController.login)
 auth_bp.route('/logout', methods=['GET'])(AuthController.logout)
 
 # User Routes
-user_bp.route('/dashboard', methods=['GET'])(UserController.dashboard)
-user_bp.route('/incidents/create', methods=['POST'])(UserController.create_incident)
+auth_bp.route('/', methods=['GET'])(lambda: ('<html><body>Welcome</body></html>', 200, {'Content-Type': 'text/html'}))
+user_bp.route('/dashboard', methods=['GET','POST'])(UserController.dashboard)
+user_bp.route('/incidents/create',  methods=['GET','POST'])(UserController.create_incident)
 user_bp.route('/incidents/<int:incident_id>', methods=['GET'])(UserController.view_incident)
 user_bp.route('/incidents/<int:incident_id>/update', methods=['POST'])(UserController.update_incident)
 user_bp.route('/incidents/<int:incident_id>/delete', methods=['POST'])(UserController.delete_incident)
