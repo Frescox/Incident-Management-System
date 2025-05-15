@@ -2,7 +2,7 @@ from flask import jsonify, render_template, session, redirect, url_for, flash, r
 from app.models.ticket_models import Incidencia, Comentario, HistorialEstado
 from app.models.catalog_models import Estado, Prioridad, Categoria
 from app.models import db
-from app.models.user_models import Usuario
+from app.models.user_rol_models import Usuario
 from app.utils.aes_encryption import decrypt    
 from sqlalchemy import text
 

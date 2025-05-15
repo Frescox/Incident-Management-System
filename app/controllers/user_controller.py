@@ -1,5 +1,5 @@
 from flask import render_template, session, redirect, url_for, request, flash, jsonify
-from app.models.user_models import Usuario
+from app.models.user_rol_models import Usuario
 from app.models.ticket_models import Incidencia, Comentario, HistorialEstado
 from app.models.catalog_models import Estado, Prioridad, Categoria
 from app.services.assignment_service import AssignmentService
@@ -18,7 +18,7 @@ class UserController:
             return redirect(url_for('auth.index'))
 
         usuario = Usuario.find_by_email(session['user_email'])
-        if not usuario:
+        if not usuario or usuario.rol_id != 3:
             return redirect(url_for('auth.index'))
 
         nombre = decrypt(usuario.nombre)
@@ -123,7 +123,7 @@ class UserController:
         if 'user_id' not in session:
             return redirect(url_for('auth.index'))
 
-        incidencia = Incidencia.query.get(incident_id)
+        incidencia = db.session.get(Incidencia, incident_id)
         if not incidencia or incidencia.usuario_creador_id != session['user_id']:
             flash('No tienes permiso para editar esta incidencia', 'error')
             return redirect(url_for('user.dashboard'))
@@ -159,7 +159,7 @@ class UserController:
         if 'user_id' not in session:
             return redirect(url_for('auth.index'))
 
-        incidencia = Incidencia.query.get(incident_id)
+        incidencia = db.session.get(Incidencia, incident_id)
         if not incidencia or incidencia.usuario_creador_id != session['user_id']:
             flash('No tienes permiso para eliminar esta incidencia', 'error')
             return redirect(url_for('user.dashboard'))
@@ -276,7 +276,7 @@ class UserController:
                 flash('El comentario no puede estar vacío', 'error')
                 return redirect(url_for('user.view_incident', incident_id=incident_id))
 
-            incidencia = Incidencia.query.get(incident_id)
+            incidencia = db.session.get(Incidencia, incident_id)
             if not incidencia or incidencia.usuario_creador_id != session['user_id']:
                 flash('No tienes permiso para comentar esta incidencia', 'error')
                 return redirect(url_for('user.dashboard'))

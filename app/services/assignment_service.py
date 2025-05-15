@@ -1,6 +1,10 @@
-from app.db.database import db
+from app.models.core import db
+from app.models.user_rol_models import Usuario
+from app.models.ticket_models import Incidencia
 from app.utils.aes_encryption import decrypt
 import random
+from sqlalchemy import func
+
 
 class AssignmentService:
     def __init__(self):
@@ -10,55 +14,68 @@ class AssignmentService:
         """
         Devuelve agentes activos que no tienen ninguna incidencia asignada.
         """
-        query = """
-            SELECT u.id, u.nombre, u.apellido
-            FROM usuarios u
-            LEFT JOIN incidencias i ON u.id = i.agente_asignado_id
-            WHERE u.rol_id = %s
-            AND u.estado = 1
-            AND i.id IS NULL
-        """
-        agentes = self.db.execute_query(query, (2,))
+        agentes = (
+            self.db.session.query(Usuario)
+            .outerjoin(Incidencia, Usuario.id == Incidencia.agente_asignado_id)
+            .filter(
+                Usuario.rol_id == 2,
+                Usuario.estado == 1,
+                Incidencia.id == None  # Ninguna incidencia asignada
+            )
+            .all()
+        )
 
+        resultado = []
         for agente in agentes:
             try:
-                agente['nombre'] = decrypt(agente['nombre']) if agente['nombre'] else ""
-                agente['apellido'] = decrypt(agente['apellido']) if agente['apellido'] else ""
+                nombre = decrypt(agente.nombre) if agente.nombre else "Desconocido"
+                apellido = decrypt(agente.apellido) if agente.apellido else ""
             except Exception as e:
                 print(f"[ERROR] Falló la desencriptación de nombre o apellido: {e}")
-                agente['nombre'] = "Desconocido"
-                agente['apellido'] = ""
+                nombre = "Desconocido"
+                apellido = ""
 
-        return agentes
-    
+            resultado.append({
+                "id": agente.id,
+                "nombre": nombre,
+                "apellido": apellido
+            })
+
+        return resultado
+
     def get_agent_with_least_incidents(self):
         """
         Devuelve el agente con menos incidencias asignadas.
         """
-        query = """
-            SELECT u.id, COUNT(i.id) AS num_incidencias
-            FROM usuarios u
-            LEFT JOIN incidencias i ON u.id = i.agente_asignado_id
-            WHERE u.rol_id = %s
-            AND u.estado = 1
-            GROUP BY u.id
-            ORDER BY num_incidencias ASC
-            LIMIT 1
-        """
-        agentes = self.db.execute_query(query, (2,))
-        return agentes[0]['id'] if agentes else None
+        subquery = (
+            self.db.session.query(
+                Usuario.id.label('id'),
+                func.count(Incidencia.id).label('num_incidencias')
+            )
+            .outerjoin(Incidencia, Usuario.id == Incidencia.agente_asignado_id)
+            .filter(
+                Usuario.rol_id == 2,
+                Usuario.estado == 1
+            )
+            .group_by(Usuario.id)
+            .order_by(func.count(Incidencia.id).asc())
+            .limit(1)
+            .first()
+        )
+
+        return subquery.id if subquery else None
 
     def assign_agent(self):
         """
         Asigna un agente activo disponible. Si todos tienen incidencias,
         asigna al agente con menos carga de incidencias.
         """
-        agentes = self.get_available_agents()
-        if agentes:
-            return random.choice(agentes)['id']  # Asignas a un agente sin incidencias
+        agentes_disponibles = self.get_available_agents()
+        if agentes_disponibles:
+            return random.choice(agentes_disponibles)['id']
 
         agente_id = self.get_agent_with_least_incidents()
         if agente_id:
-            return agente_id  # Asignas al que tenga menos incidencias
+            return agente_id
 
         raise ValueError("No hay agentes disponibles.")
