@@ -2,17 +2,17 @@ from flask import Flask
 from app.controllers.auth_controller import AuthController
 from app.routers.routes import init_routes
 from config import config
-from app.services.mail_service import init_mail  # Importa la función de inicialización de mail
-from app.models.core import db  # Importa SQLAlchemy db
+from app.services.mail_service import init_mail 
+from app.models.core import db  
 
 def create_app():
-    # Inicializar la aplicación Flask
+    # Inicializa la aplicación Flask
     app = Flask(__name__, template_folder='app/templates', static_folder='app/static')
     
     # Cargar configuración
     app.config.from_object(config['default'])
     
-    # Inicializar Flask-Mail
+    # Inicializa Flask-Mail
     init_mail(app)  # Inicializa Flask-Mail aquí
     
     # Inicializa SQLAlchemy

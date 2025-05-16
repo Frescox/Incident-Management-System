@@ -60,12 +60,18 @@ python run.py
 Luego accede en tu navegador:
 
 ```
-http://localhost:5000
+http://localhost:8080
 ```
 o de esta otra:
 
 ```
-http://127.0.0.1:5000
+http://127.0.0.1:8080
+```
+
+### Ejecutar las pruebas
+
+```
+pytest test_suite.py -v
 ```
 
 # Credenciales para el admin
